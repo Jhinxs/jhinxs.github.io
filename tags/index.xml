@@ -2,26 +2,26 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on Jhin&#39;s Story</title>
-    <link>/tags/</link>
+    <link>https://jhinxs.github.io/tags/</link>
     <description>Recent content in Tags on Jhin&#39;s Story</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 02 Jun 2021 12:37:55 +0800</lastBuildDate><atom:link href="/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 02 Jun 2021 12:37:55 +0800</lastBuildDate><atom:link href="https://jhinxs.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Kernel</title>
-      <link>/tags/kernel/</link>
+      <link>https://jhinxs.github.io/tags/kernel/</link>
       <pubDate>Wed, 02 Jun 2021 12:37:55 +0800</pubDate>
       
-      <guid>/tags/kernel/</guid>
+      <guid>https://jhinxs.github.io/tags/kernel/</guid>
       <description></description>
     </item>
     
     <item>
       <title>VT</title>
-      <link>/tags/vt/</link>
+      <link>https://jhinxs.github.io/tags/vt/</link>
       <pubDate>Wed, 02 Jun 2021 12:37:55 +0800</pubDate>
       
-      <guid>/tags/vt/</guid>
+      <guid>https://jhinxs.github.io/tags/vt/</guid>
       <description></description>
     </item>
     

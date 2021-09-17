@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kernel on Jhin&#39;s Story</title>
-    <link>/tags/kernel/</link>
+    <link>https://jhinxs.github.io/tags/kernel/</link>
     <description>Recent content in Kernel on Jhin&#39;s Story</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 02 Jun 2021 12:37:55 +0800</lastBuildDate><atom:link href="/tags/kernel/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 02 Jun 2021 12:37:55 +0800</lastBuildDate><atom:link href="https://jhinxs.github.io/tags/kernel/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Inter VT-x mini VT 框架的实现</title>
-      <link>/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
+      <link>https://jhinxs.github.io/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
       <pubDate>Wed, 02 Jun 2021 12:37:55 +0800</pubDate>
       
-      <guid>/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
+      <guid>https://jhinxs.github.io/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
       <description>Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，</description>
     </item>
     
