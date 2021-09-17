@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    
+    <script type="application/ld+json">
+
+{  
+  "@context":"http://schema.org",
+  "@type":"Website",
+  "@id":"",
+  "author": {
+    "@type": "Person",
+    "name": "jhin",
+    
+    "image": "images/jhin.png"
+    
+  },
+  "name":"Jhin\u0027s Story",
+  "description":"Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，",
+  "url":"\/post\/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0\/",
+  "keywords":"[tech, 74, 104, 105, 110, 239, 188, 140, 75, 101, 114, 110, 101, 108, 239, 188, 140, 114, 101, 100, 116, 101, 97, 109, 239, 188, 140, 86, 84, 239, 188, 140, 82, 101, 118, 101, 114, 115, 101, 239, 188, 140, 67, 111, 100, 101, 239, 188, 140, 231, 186, 162, 233, 152, 159, 239, 188, 140, 229, 134, 133, 230, 160, 184]"
+}
+
+</script>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Hugo 0.88.0 with theme Tranquilpeak 0.5.1-BETA">
+<meta name="author" content="jhin">
+<meta name="keywords" content="tech, 74, 104, 105, 110, 239, 188, 140, 75, 101, 114, 110, 101, 108, 239, 188, 140, 114, 101, 100, 116, 101, 97, 109, 239, 188, 140, 86, 84, 239, 188, 140, 82, 101, 118, 101, 114, 115, 101, 239, 188, 140, 67, 111, 100, 101, 239, 188, 140, 231, 186, 162, 233, 152, 159, 239, 188, 140, 229, 134, 133, 230, 160, 184">
+<meta name="description" content="Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，">
+
+
+<meta property="og:description" content="Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Inter VT-x mini VT 框架的实现">
+<meta name="twitter:title" content="Inter VT-x mini VT 框架的实现">
+<meta property="og:url" content="/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+<meta property="twitter:url" content="/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+<meta property="og:site_name" content="Jhin&#39;s Story">
+<meta property="og:description" content="Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，">
+<meta name="twitter:description" content="Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，">
+<meta property="og:locale" content="en-us">
+
+  
+    <meta property="article:published_time" content="2021-06-02T12:37:55">
+  
+  
+    <meta property="article:modified_time" content="2021-06-02T12:37:55">
+  
+  
+  
+    
+      <meta property="article:section" content="Windows Kernel">
+    
+  
+  
+    
+      <meta property="article:tag" content="Kernel">
+    
+      <meta property="article:tag" content="VT">
+    
+  
+
+
+<meta name="twitter:card" content="summary">
+
+
+
+
+
+
+
+  <meta property="og:image" content="images/jhin.png">
+  <meta property="twitter:image" content="images/jhin.png">
+
+
+
+
+
+  <meta property="og:image" content="images/assets/post1/thumbnailImage.PNG">
+  <meta property="twitter:image" content="images/assets/post1/thumbnailImage.PNG">
+
+
+    <title>Inter VT-x mini VT 框架的实现</title>
+
+    <link rel="icon" href="images/jhin.png">
+    
+
+    
+
+    <link rel="canonical" href="/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" integrity="sha512-H9jrZiiopUdsLpg94A333EfumgUBpO9MdbxStdeITo+KEIMaNfHNvwyjjDJb+ERPaRS6DpyRlKbvPUasNItRyw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    
+    
+    <link rel="stylesheet" href="css/style-ntiofhzmjvh7c8uxrsev8vpfblm8lzatbsighnuy1am1kkxedeogtbrvv3.min.css" />
+    
+    
+      
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js">
+      
+    
+
+    
+      
+    
+    <script>
+    function setTheme(themeName) {
+        if(themeName === 'dark') {
+            document.documentElement.classList.remove('theme--light');
+            document.documentElement.classList.add('theme--dark');
+        }
+        else {
+            document.documentElement.classList.remove('theme--dark');
+            document.documentElement.classList.add('theme--light');
+        }
+
+        localStorage.setItem('theme', themeName);
+        document.documentElement.setAttribute('data-theme', themeName);
+    }
+
+    var currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+
+    
+    if (currentTheme) {
+        if (currentTheme === 'dark') {
+            setTheme('dark');
+        } else {
+            setTheme('light');
+        }
+    }
+    else {
+        
+        if (window.matchMedia("(prefers-color-scheme: dark)")){
+            setTheme('dark');
+        }
+        else if (window.matchMedia("(prefers-color-scheme: light)")){
+            setTheme('light');
+        }
+        else {
+            
+            setTheme('dark');
+        }
+    }
+
+    var mqDark = window.matchMedia('(prefers-color-scheme: dark)');
+    var mqLight = window.matchMedia('(prefers-color-scheme: light)');
+    
+    function checkTheme(event) {
+        if (event.matches) {
+            if (event.media.includes('dark')) {
+                setTheme('dark');
+                document.getElementById('slider').checked = false;
+            }
+            if (event.media.includes('light')) {
+                setTheme('light');
+                document.getElementById('slider').checked = true;
+            }
+        }
+    }
+    
+    try {
+      mqDark.addEventListener('change', checkTheme);
+      mqLight.addEventListener('change', checkTheme);
+    } catch (maybeSafari) {
+      try {
+        mqDark.addListener(checkTheme);
+        mqLight.addListener(checkTheme);
+      } catch (dontknow) {
+        
+      }
+    }
+</script>
+  </head>
+
+  <body>
+    <div id="blog">
+      <header id="header" data-behavior="4">
+  <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+  <div class="header-title">
+    <a class="header-title-link" href="/" aria-label="Go to homepage">Jhin&#39;s Story</a>
+  </div>
+  
+</header>
+
+      <nav id="sidebar" data-behavior="4">
+  <div class="sidebar-container">
+    
+      <div class="sidebar-profile">
+        <a href="/#about" aria-label="Read more about the author">
+          <img class="sidebar-profile-picture" src="images/jhin.png" alt="Author&#39;s picture" />
+        </a>
+        <h4 class="sidebar-profile-name">jhin</h4>
+        
+          <h5 class="sidebar-profile-bio">SwapContext Error</h5>
+        
+        
+          <label id="switch" class="switch">
+    <input type="checkbox" onchange="toggleTheme()" id="slider" aria-label="Switch between Dark and Light mode">
+    <span class="slider round"></span>
+</label>
+        
+      </div>
+    
+    <ul class="sidebar-buttons">
+      
+  <li class="sidebar-button">
+    
+      <a class="sidebar-button-link " href="/" title="Home">
+    
+      <i class="sidebar-button-icon fas fa-lg fa-home" aria-hidden="true"></i>
+      
+      <span class="sidebar-button-desc">Home</span>
+    </a>
+  </li>
+
+  <li class="sidebar-button">
+    
+      <a class="sidebar-button-link " href="/categories" title="Categories">
+    
+      <i class="sidebar-button-icon fas fa-lg fa-bookmark" aria-hidden="true"></i>
+      
+      <span class="sidebar-button-desc">Categories</span>
+    </a>
+  </li>
+
+  <li class="sidebar-button">
+    
+      <a class="sidebar-button-link " href="/tags" title="Tags">
+    
+      <i class="sidebar-button-icon fas fa-lg fa-tags" aria-hidden="true"></i>
+      
+      <span class="sidebar-button-desc">Tags</span>
+    </a>
+  </li>
+
+  <li class="sidebar-button">
+    
+      <a class="sidebar-button-link " href="/#about" title="About">
+    
+      <i class="sidebar-button-icon fas fa-lg fa-question" aria-hidden="true"></i>
+      
+      <span class="sidebar-button-desc">About</span>
+    </a>
+  </li>
+
+
+    </ul>
+    <ul class="sidebar-buttons">
+      
+  <li class="sidebar-button">
+    
+      <a class="sidebar-button-link " href="/https://github.com/axStorm" title="GitHub">
+    
+      <i class="sidebar-button-icon fab fa-lg fa-github" aria-hidden="true"></i>
+      
+      <span class="sidebar-button-desc">GitHub</span>
+    </a>
+  </li>
+
+  <li class="sidebar-button">
+    
+      <a class="sidebar-button-link " href="/archives" title="Archives">
+    
+      <i class="sidebar-button-icon fas fa-lg fa-archive" aria-hidden="true"></i>
+      
+      <span class="sidebar-button-desc">Archives</span>
+    </a>
+  </li>
+
+
+    </ul>
+    <ul class="sidebar-buttons">
+      
+      
+    </ul>    
+  </div>
+</nav>
+
+      
+
+      <div id="main" data-behavior="4"
+        class="
+               hasCoverMetaIn
+               ">
+        <article class="post" id="top">
+          
+          
+            <div class="post-header main-content-wrap text-left">
+  
+    <h1 class="post-title">
+      Inter VT-x mini VT 框架的实现
+    </h1>
+  
+  
+  <div class="postShorten-meta post-meta">
+    
+      <time datetime="2021-06-02T12:37:55&#43;08:00">
+        
+  June 2, 2021
+
+      </time>
+    
+    
+  
+  
+    <span>in</span>
+    
+      <a class="category-link" href="/categories/windows-kernel">Windows Kernel</a>
+    
+  
+
+  </div>
+
+</div>
+          
+          <div class="post-content markdown">
+            <div class="main-content-wrap">
+              <p>  Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，新的环境也会引入一些新的特权指令等新的功能。在设计架构上和SVM类似，分为VMM和VMGUEST两种角色，分别处于VMX-ROOT和VMX-NO ROOT模式下</p>
+<p><img src="/images/assets/post1/page1.PNG" alt="avator"></p>
+<p>对于虚拟机来说，Hypervisor是完全透明的，当Guest客户机发生vmexit事件后会陷入到Hypervisor，此时控制权完全交与Hypervisor，而Hypervisor同样可以通过vmlaunch运行虚拟机，或者在处理完vmexit事件后，通过vmresume指令，继续运行虚拟机</p>
+<h3 id="vt框架实现流程">VT框架实现流程</h3>
+<p>本代码用于学习研究，运行于32位操作系统之上，在代码实现VT的时候，主要是需要遵循Inter开发手册的标准，我这里实现的时候，大概是以下的流程:</p>
+<ul>
+<li>判断当前CPU是否支持VT技术，通过执行cpuid指令，获取返回信息并判断对应的标志位，这是硬件层面的要求</li>
+<li>读取MSR_IA32_FEATURE_CONTROL MSR寄存器对应标志位，用于判断在BIOS配置中是否开启了VT</li>
+<li>检查并设置CR4 VMXE标志位</li>
+<li>分配4K对齐的内存，用于vmx操作，这块区域按照白皮书的定义一般叫做VMXON region</li>
+<li>初始化VMXON region区域，主要是写入一个VMCS版本号，这个版本号通过读取 IA32_MSR_VMX_BASIC MSR寄存器获得</li>
+<li>执行VMXON,并检查EFLAGE.CF位是否置0，判断是否执行成功</li>
+<li>分配4K对齐的内存，用于逻辑处理器也即虚拟机的操作区域，叫做VMCS region</li>
+<li>调用vmclear指令，将VMCS区域设置为清除状态，也即区域初始化</li>
+<li>调用vmptrld指令，激活VMCS</li>
+<li>为host以及guest分配内存空间</li>
+<li>填充VMCS区域，这是最重要也是最复杂的一步</li>
+<li>通过vmlaunch运行虚拟机</li>
+</ul>
+<h3 id="代码部分">代码部分</h3>
+<p>这个代码写的也是一波三折，蓝屏N次，也是各种坑，虽然可以有参考代码，但实际上有很多因素，遇到比如像保存现场代码的优化，多核处理等等诸多问题</p>
+<p>首先是开启VT的前期，检测阶段，首先就是通过CPUID指令，这个指令执行前，需要将EAX寄存器置为1，返回值会存在ECX寄存器中，这里CPUID置1是Inter的要求，如果EAX中是其他值，返回的信息也是不同的，只是在这里用作CPU VTZ支持检测，EAX需要置1
+<img src="/images/assets/post1/page2.PNG" alt="avator"></p>
+<pre tabindex="0"><code>get_cpuid_info proc,_para:dword
+       
+        pushad
+        mov eax,1H
+        cpuid
+        mov esi,_para
+        mov [esi],ecx
+        popad
+        ret
+
+get_cpuid_info endp
+
+</code></pre><p>然后是读取IA32_FEATURE_CONTROL MSR寄存器,如果在bios启用VT则bit1，bit2或者两者都必须为1，bit1和bit2主要用于设置是否处于SMX Mode（安全扩展模式）下，这里一般检测bit2就可以了</p>
+<pre tabindex="0"><code>    ULONG64 msr =  __readmsr(MSR_IA32_FEATURE_CONTROL);
+    if (!(msr &amp; 4))                                              //4.VT 指令是否被锁定
+    {
+        DbgPrint(&quot;MSR_IA32_FEATURE_CONTROL VMXON Locked \n&quot;);
+        return STATUS_UNSUCCESSFUL;
+    }
+</code></pre><p>检测并设置CR4.VMXE也就是bit13位，在VMXON和VMXOFF之间不许再修改此位</p>
+<pre tabindex="0"><code>    set_cr4(X86_CR4_VMXE);                                 //3.设置CR4.VMXE
+    cr4 = get_cr4(); 
+    if ((cr4 &amp; X86_CR4_VMXE) != X86_CR4_VMXE)
+    {
+        DbgPrint(&quot;CR4_VMXE set Error \n&quot;);
+        return STATUS_UNSUCCESSFUL;
+    }
+</code></pre><p>分配VMXON Region区域，读取MSR寄存器，获取VMCS标识并用其初始化VMXON Region，白皮书中说设置前31位，这里需要注意分配非分页内存，然后就可以通过VMXON进入虚拟机模式了，这里首先要获取VMXON Region区域的物理地址，作为参数传递给VMXON，执行完VMXON后需要验证Eflags寄存器的CF位和ZF是否为0，0表示开启成功（参考 inter-64-ia-32&ndash;system-programming-manual-vol-3 Chapter 24.1）
+<img src="/images/assets/post1/page3.PNG" alt="avator"></p>
+<pre tabindex="0"><code>vmx_on proc,LowPart:dword,HighPart:dword
+
+        push HighPart
+        push LowPart
+        vmxon qword ptr [esp]
+        add esp,8
+        ret
+
+vmx_on endp
+</code></pre><pre tabindex="0"><code>    vmx_basic_msr = __readmsr(MSR_IA32_VMX_BASIC);                 //获取vmcs identifier
+    VMX_Region = ExAllocatePoolWithTag(NonPagedPool, 4096, 'vmx');            
+    RtlZeroMemory(VMX_Region, 4096);
+    *(ULONG*)VMX_Region = (vmx_basic_msr &amp; 0x7ffffff);
+    VMXONRegion_PA = MmGetPhysicalAddress(VMX_Region);
+    vmx_on(VMXONRegion_PA.LowPart,VMXONRegion_PA.HighPart);
+
+</code></pre><p>前期检测的过程基本完了，接下来就是分配内存了，首先是分配VMCS Region,这块区域是最核心的，可以看为是虚拟化逻辑处理器做各种操作所需要的内存空间，VMCS Region中存在各种域，是需要手动指定填充的，同样需要为Host分配一块内存，用于guest发生vmexit回到host所需要的内存空间，同样分配内存4k对齐以及非分页，在驱动卸载时要释放这几块内存区域，在VMCS Region分配完后，需要调用vmclear以及vmptrld指令，用于初始化和激活VMCS Region</p>
+<pre tabindex="0"><code>    VMXCS_Region = ExAllocatePoolWithTag(NonPagedPool, 4096,'vmcs');            
+    DbgPrint(&quot;VMXCS_Region: %x\n&quot;, VMXCS_Region);
+    RtlZeroMemory(VMXCS_Region, 4096);
+
+    vmx_basic_msr = __readmsr(MSR_IA32_VMX_BASIC);
+    *(ULONG*)VMXCS_Region = (vmx_basic_msr &amp; 0x7ffffff);
+    VMCSRegion_PA = MmGetPhysicalAddress(VMXCS_Region);
+
+    vmxcs_clear(VMCSRegion_PA.LowPart, VMCSRegion_PA.HighPart）;    
+
+    eflags = __readeflags();
+    if ((eflags &amp; 0x41) != 0)
+    {
+        DbgPrint(&quot;vmxcs_clear ERROR\n&quot;);
+        ExFreePoolWithTag(VMX_Region, 'vmx');
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    vmx_vmptrld(VMCSRegion_PA.LowPart, VMCSRegion_PA.HighPart);  
+
+    vmhost_Stack = ExAllocatePoolWithTag(NonPagedPool, 4096, 'hesp');    
+    RtlZeroMemory(vmhost_Stack, 4096);
+    DbgPrint(&quot;vmhost_Stack %x\n&quot;, vmhost_Stack);
+
+    vmguest_Stack = ExAllocatePoolWithTag(NonPagedPool, 4096, 'gesp');
+    RtlZeroMemory(vmguest_Stack, 4096);
+    DbgPrint(&quot;vmguest_Stack %x\n&quot;, vmguest_Stack);
+
+</code></pre><p>接下来时最关键是最关键的VMCS Region的填充，inter规定了这块内存需要填充以下域 (参考 inter-64-ia-32&ndash;system-programming-manual-vol-3 Chapter 24.3)：</p>
+<ul>
+<li>Guest-state area（虚拟机状态域）:进入CPU进入VM时需要从这里读取信息，VMExit时将当时的VM CPU状态信息保存在这，用以下次进入，保存状态例如各种CR寄存器，通用寄存器，GDTR等等</li>
+<li>Host-state  area（宿主机状态域）:VM发生EXIT进入Hypervisor时，恢复VMM的执行，保存HOST的CPU状态信息，通用寄存器，堆栈，控制寄存器等等</li>
+<li>VM-Execution Control Fields（VM执行控制域）: 用以控制VM在什么条件下产出VMEXIT事件，如读写CR3等等</li>
+<li>VMEntry Control Fields（VMEntry 控制域）:控制进入VM时的一些行为，如是否Load DR寄存器</li>
+<li>VM-Exit Control Fields （VMExit 控制域）:控制VM发生EXIT事件时的行为，</li>
+<li>VM-Exit Information Fields（VMExit 信息域）:表示了VM发生EXIT事件的原因，可以和VM-Execution Control Fields做配合调试</li>
+</ul>
+<p>这里学到一个小技巧，可以根据vmlaunch指令的运行，配合vmread VM_INSTRUCTION_ERROR，来判断这些域基本填写是否正确，错误码对应的原因可以查Chapter30.4
+<img src="/images/assets/post1/page4.PNG" alt="avator"></p>
+<p>首先是填写Host Area,使用如下类似的填写方式，这里要注意的是必须使用vmwrite的方式，给对应的字段填写，不能自己通过指针啥的方式</p>
+<pre tabindex="0"><code>    vmx_vmwrite(VMCS_HOSTAREA_CR0, __readcr0());
+    vmx_vmwrite(VMCS_HOSTAREA_CR3, __readcr3());
+    vmx_vmwrite(VMCS_HOSTAREA_CR4, __readcr4());
+    vmx_vmwrite(VMCS_HOSTAREA_CS, readcs() &amp; 0xfff8);
+    vmx_vmwrite(VMCS_HOSTAREA_DS, readds() &amp; 0xfff8);
+    vmx_vmwrite(VMCS_HOSTAREA_ES, reades() &amp; 0xfff8);
+    vmx_vmwrite(VMCS_HOSTAREA_SS, readss() &amp; 0xfff8);
+    vmx_vmwrite(VMCS_HOSTAREA_FS, readfs() &amp; 0xfff8);
+    vmx_vmwrite(VMCS_HOSTAREA_GS, readgs() &amp; 0xfff8);
+    vmx_vmwrite(VMCS_HOSTAREA_TR, readtr() &amp; 0xfff8);
+
+</code></pre><p>指定vmexit发生时，跳转到VMM的代码地址</p>
+<pre tabindex="0"><code>vmx_vmwrite(VMCS_HOSTAREA_RIP, (ULONG)vmx_vmmhostentry);
+</code></pre><p>Chapter24.5可以看到，inter规定必须要填写的字段，像读取段寄存器，控制寄存器这种网上都是构建汇编如mov eax,es 这种也可以，不过比较推荐使用微软提供的库:#include &lt;intrin.h&gt;,微软出品，必属精品</p>
+<p>Guest Area填写的东西就比较多了，比如像填写段寄存器，需要填写选择子，base,limit以及属性，这里参考了newbluepill的方式，动态的去GDT表里面解析段描述符，获取各种字段所需的值
+<img src="/images/assets/post1/page5.PNG" alt="avator"></p>
+<pre tabindex="0"><code>	SegDesc = (PSEGMENT_DESCRIPTOR2)((PUCHAR)GdtBase + (Selector &amp; ~0x7));
+	// 段选择子
+	SegmentSelector-&gt;sel = Selector;
+	// 段基址15-39位 55-63位
+	SegmentSelector-&gt;base = SegDesc-&gt;base0 | SegDesc-&gt;base1 &lt;&lt; 16 | SegDesc-&gt;base2 &lt;&lt; 24;
+	// 段限长0-15位  47-51位
+	SegmentSelector-&gt;limit = SegDesc-&gt;limit0 | (SegDesc-&gt;limit1attr1 &amp; 0xf) &lt;&lt; 16;
+	// 段属性39-47 51-55 
+	SegmentSelector-&gt;attributes.UCHARs = SegDesc-&gt;attr0 | (SegDesc-&gt;limit1attr1 &amp; 0xf0) &lt;&lt; 4;
+</code></pre><p>这里注意，HOST和GUSET中都填写了类似如下字段：</p>
+<pre tabindex="0"><code>    vmx_vmwrite(VMCS_GUSTAREA_SYSENTER_CS, __readmsr(MSR_IA32_SYSENTER_CS) &amp; 0xFFFFFFFF);
+    vmx_vmwrite(VMCS_GUSTAREA_SYSENTER_EIP, __readmsr(MSR_IA32_SYSENTER_EIP) &amp; 0xFFFFFFFF);
+    vmx_vmwrite(VMCS_GUSTAREA_SYSENTER_ESP, __readmsr(MSR_IA32_SYSENTER_ESP) &amp; 0xFFFFFFFF);
+</code></pre><p>这个就像正常的CPU模式下，3环进0环一样，需要切换环境，需要新的堆栈，以及入口EIP等，可以rdmsr MSR_IA32_SYSENTER_EIP(0x176)看看，机器如果支持快速调用，这里都是KifastCallEntry</p>
+<p>在填写各种段寄存器的时候，host和guest中都有&amp;0xFFF8的操作，这个是为了将最后的RPL清0，这个和段权限检查相关，访问某个段，RPL和CPL要在数值上小于等于DPL</p>
+<pre tabindex="0"><code>vmx_vmwrite(VMCS_GUSTAREA_ES + Segreg * 2, Selector &amp; 0xFFF8);
+</code></pre><p>临时堆栈的设置，这里+0x1000,就相当于ESP+0x1000,vmguest_Stack我们之前分配了4k,栈是逆向增长的，这个操作就相当于ESP指向了分配的栈的栈底</p>
+<pre tabindex="0"><code> vmx_vmwrite(VMCS_GUSTAREA_RSP,vmguest_Stack + 0x1000);
+</code></pre><p>虚拟机运行控制域，参考Chapter 24.6,这里填写的字段主要就是确定发生vmexit事件的原因，，这里的填写是有要求的，除了自定义填写之外，有些bit位是需要设置1，有些bit位是需要设置为0，这个根据对应的MSR寄存器来确定，具体AREA中填写的字段可以参考白皮书，这里VMCS_PROCESSOR_BASE_CONTTOL为例：</p>
+<pre tabindex="0"><code> vmx_vmwrite(VMCS_PROCESSOR_BASE_CONTTOL, AdjustControlBit(0, MSR_IA32_VMX_PROCBASED_CTLS));
+</code></pre><p>我们以最小的发生vmexit事件的拦截原则，其中必须置位的根据IA32_VMX_PROCBASED_CTLS寄存器确定</p>
+<pre tabindex="0"><code>0: kd&gt; rdmsr 482
+msr[482] = fff9fffe`0401e172
+0: kd&gt; .formats 0401e172
+Evaluate expression:
+  Hex:     0401e172
+  Decimal: 67232114
+  Octal:   00400360562
+  Binary:  00000100 00000001 11100001 01110010
+  Chars:   ...r
+  Time:    Fri Feb 18 11:35:14 1972
+  Float:   low 1.52674e-036 high 0
+  Double:  3.32171e-316
+
+</code></pre><p>我们可以看到对应msr寄存器的内容，第四个字节中的1代表该位必须置1，高四个字节中的0代表该位必须置0，在这里，15，16为1，也就对应一下情况发生时必须产生vmexit事件，然后VMM要对其进行拦截处理</p>
+<p><img src="/images/assets/post1/page6.PNG" alt="avator">
+其余的字段填写是类似的，根据需要对应的bit位置位就行</p>
+<p>基本的area都按要求填写完毕，现在就可以vmlaunch启动你的虚拟机了，但是这个时候我们还没有对虚拟机的vmexit事件做处理，一个基本的情况就是，一运行之后，vmexit事件产出，代码就会跳转到先前指定的hostarea_rip的位置，说明你学要对这个vmexit世界进行处理，然后再vmresume，让vm继续运行</p>
+<p>而vmexit产生的原因，可以通过vmread VM_EXIT_REASON得到，参考inter-64-ia-32&ndash;system-programming-manual-vol-3 附录3 VMX Basic Exit Reasons 表格，一般基础的代码写完之后，遇到最多的一个vmexit原因就是CR3的读取和写入，需要注意的，在这个地方，接管vm过来的代码，处理vmexit时，要记得保存现场，就是一些寄存器要保存，在处理完事件之后，恢复即可</p>
+<pre tabindex="0"><code>vmx_vmmhostentry proc
+        
+        pushad
+        push esp
+        call VmhostEntrydbg
+        popad
+        vmresume
+        
+vmx_vmmhostentry endp
+
+</code></pre><p>这个地方保存的时候，保存之前Guest域中没用填写的就可以了，其他的会自己保存在那个域里面，这里我只保存了下通用寄存器，VmhostEntrydbg是定义的一个vmexit处理函数</p>
+<p>以CR3的读写为例，部分代码：</p>
+<pre tabindex="0"><code>    CrQulification = vmx_vmread(VMCS_EXIT_QUALIFICTION);
+    CRNumber = (CrQulification &amp; 0x0000000f);
+    Accesstype = ((CrQulification &amp; 0x00000030) &gt;&gt; 4);
+    operandtype = ((CrQulification &amp; 0x00000040) &gt;&gt; 6);
+    MovrCRPurposeReg = ((CrQulification &amp; 0x00000F00) &gt;&gt; 8);
+    if (Accesstype == 0)
+    {
+        
+        switch (MovrCRPurposeReg)
+        {
+        case 0:
+        {
+            vmx_vmwrite(VMCS_GUSTAREA_CR3, g_GUEST_REGS-&gt;eax);
+            break;
+        }
+</code></pre><p>这里读取了一个QUALIFICTION这样的一个信息，这个信息可以理解为在发生对CR寄存器的访问和写入时的具体信息，如是从那个寄存器写入的，是读取还是写入，参考chapter 27.2</p>
+<p><img src="/images/assets/post1/page7.PNG" alt="avator">
+其中的bit位就对应了相关信息，只需要做一下解析就行了，例如通过bit postions 3:0 你可以获取到和那个CR寄存器发生了交互，在32位机器上bit3总为0，bit postions 5:4代表读取还是写入，0代表CR是目的操作数，此时写入，1代表源操作数，此时读取，这里的11：8要注意这个寄存器的顺序，因为我们要拦截对CR寄存器的操作，意味着我们要帮助vm完成这个过程，通过bit postions 11：8得到和CR寄存器交互的寄存器后一般如果构造这样一个结构体保存了这些通用寄存器的话，你需要注意你的寄存器的排列顺序</p>
+<p>处理完vmexit事件后，就要返回VM了，这里的小细节：</p>
+<pre tabindex="0"><code>    ULONG instructionlen = vmx_vmread(VMCS_INSTRUCTION_LENGH);
+    ULONG geip = vmx_vmread(GUEST_RIP);
+    ULONG guestnexteip = geip + instructionlen;
+    vmx_vmwrite(VMCS_GUSTAREA_RIP, guestnexteip);
+</code></pre><p>可以看到最后的返回eip加了一个值，这个VMCS_INSTRUCTION_LENGH，就是当时发生VMEXIT时，CPU执行的那条指令的长度,比如MOV eax,cr3 被我们拦截并处理完了，那么EIP也应当在原来的基础上加上这条指令的长度，接着执行下一条指令，最终调用vmresume继续执行VM即可</p>
+<p>一个简单的VT框架就是这些吧，可能还有其他的点，后续遇到再深入学习吧！！！</p>
+<h3 id="扩展">扩展</h3>
+<p>1.VMEXIT导致GDT Limit发生改变，使用ARK工具查看GDT相关信息时出发BSoD</p>
+<p>这个是在看zhouhe的VT教程看到的，至于原因，白皮书说,VMEXIT时会加载一些host的CR寄存器,msr寄存器,加载GDTR和IDTR时，limit会从3ff变为ffff：
+<img src="/images/assets/post1/page8.PNG" alt="avator"></p>
+<p>在驱动加载,开启VT前可以保存一份GDTR，驱动卸载，关闭VT后恢复即可</p>
+<p>2.VM第一次初始化运行，驱动继续执行的问题,就是说我们运行vmlaunch之后，进入虚拟机里，后续的驱动代码时不会执行的，卡死的状态，所以我们要构造一个上下文环境，在vmlaunch之后，我们的驱动代码可以正常执行完毕：</p>
+<pre tabindex="0"><code>    VTenable_before();
+    StartVMXCS();                                                          
+    VTenable_after();
+</code></pre><p>在VMCS初始化填写前后，构造两个函数，我这里汇编实现：</p>
+<pre tabindex="0"><code>VTenable_before proc
+        cli
+        mov DriverEAX,eax
+        mov DriverECX,ecx
+        mov DriverEDX,edx
+        mov DriverEBX,ebx
+        mov DriverESP,esp
+        mov DriverEBP,ebp
+        mov DriverESI,esi
+        mov DriverEDI,edi
+        pushfd
+        pop DriverEFL
+        sti
+        ret
+
+VTenable_before endp
+</code></pre><p>之前保存现场，之后恢复现场，第一次进入VM时，就会跳转到我们的vmx_GuestReturn代码执行，而这个vmx_GuestReturn功能就是调用VTenable_after()，确保驱动正常执行完毕</p>
+<pre tabindex="0"><code>vmx_vmwrite(VMCS_GUSTAREA_RIP, (ULONG)vmx_GuestReturn);
+</code></pre><p>3.多核问题
+看雪小宝来了说过这个问题，就是说我们VT的开启，肯定是以CPU为基准的，单核那就在这个核上开启VT就行，但如果是多核的情况下，不可能仅在个别核上开启VT，那必然时蓝屏啊，所以需要扩展至多核兼容，比如分配各种内存时，需要每个核都分配，同样在执行VT代码的时候，每个核都要执行一边才行</p>
+<pre tabindex="0"><code>    for (int i = 0; i &lt; KeNumberProcessors; i++)
+    {
+        KeSetSystemAffinityThread((KAFFINITY)(1 &lt;&lt; i));
+        VT_Disable();
+        KeRevertToUserAffinityThread();
+        DbgPrint(&quot;stop vt on cpu [%d]...\n&quot;, i);
+    }
+</code></pre><p>具体API的使用以及用途,参考MSDN文档即可</p>
+<p>Code: <a href="https://github.com/axstorm/x32_VT">https://github.com/axstorm/x32_VT</a></p>
+<p>Reference:</p>
+<ul>
+<li><a href="https://github.com/zzhouhe/VT_Learn/tree/master/MinimalVT">https://github.com/zzhouhe/VT_Learn/tree/master/MinimalVT</a></li>
+<li><a href="https://bbs.pediy.com/thread-211973.htm">https://bbs.pediy.com/thread-211973.htm</a></li>
+<li><a href="https://github.com/haidragon/newbluepill">https://github.com/haidragon/newbluepill</a></li>
+<li>&laquo;new blue pill:深入理解硬件虚拟机&raquo;</li>
+<li>&laquo;inter 64-ia-32&ndash;system-programming-manual-vol-3&raquo;</li>
+</ul>
+
+              
+
+            </div>
+          </div>
+          <div id="post-footer" class="post-footer main-content-wrap">
+            
+              
+                
+                
+                  <div class="post-footer-tags">
+                    <span class="text-color-light text-small">TAGGED IN</span><br/>
+                    
+  <a class="tag tag--primary tag--small" href="/tags/kernel/">Kernel</a>
+
+  <a class="tag tag--primary tag--small" href="/tags/vt/">VT</a>
+
+                  </div>
+                
+              
+            
+            <div class="post-actions-wrap">
+  
+      <nav >
+        <ul class="post-actions post-action-nav">
+          
+            <li class="post-action">
+              
+                <a class="post-action-btn btn btn--disabled">
+              
+                  <i class="fa fa-angle-left"></i>
+                  <span class="hide-xs hide-sm text-small icon-ml">NEXT</span>
+                </a>
+            </li>
+            <li class="post-action">
+              
+                <a class="post-action-btn btn btn--disabled">
+              
+                  <span class="hide-xs hide-sm text-small icon-mr">PREVIOUS</span>
+                  <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+          
+        </ul>
+      </nav>
+    <ul class="post-actions post-action-share" >
+      
+        <li class="post-action hide-lg hide-md hide-sm">
+          <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+            <i class="fa fa-share-alt" aria-hidden="true"></i>
+          </a>
+        </li>
+        
+          <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Facebook" aria-label="Share on Facebook">
+              <i class="fab fa-facebook-square" aria-hidden="true"></i>
+            </a>
+          </li>
+        
+          <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Twitter" aria-label="Share on Twitter">
+              <i class="fab fa-twitter" aria-hidden="true"></i>
+            </a>
+          </li>
+        
+          <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Google&#43;" aria-label="Share on Google&#43;">
+              <i class="fab fa-google-plus" aria-hidden="true"></i>
+            </a>
+          </li>
+        
+      
+      
+      <li class="post-action">
+        
+          <a class="post-action-btn btn btn--default" href="#top" aria-label="Back to top">
+          <i class="fa fa-arrow-up" aria-hidden="true"></i>
+        
+        </a>
+      </li>
+    </ul>
+  
+</div>
+
+            
+  
+
+
+          </div>
+        </article>
+        <footer id="footer" class="main-content-wrap">
+  <span class="copyrights">
+    &copy; 2021 jhin. All Rights Reserved
+  </span>
+</footer>
+
+      </div>
+      <div id="bottom-bar" class="post-bottom-bar" data-behavior="4">
+        <div class="post-actions-wrap">
+  
+      <nav >
+        <ul class="post-actions post-action-nav">
+          
+            <li class="post-action">
+              
+                <a class="post-action-btn btn btn--disabled">
+              
+                  <i class="fa fa-angle-left"></i>
+                  <span class="hide-xs hide-sm text-small icon-ml">NEXT</span>
+                </a>
+            </li>
+            <li class="post-action">
+              
+                <a class="post-action-btn btn btn--disabled">
+              
+                  <span class="hide-xs hide-sm text-small icon-mr">PREVIOUS</span>
+                  <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+          
+        </ul>
+      </nav>
+    <ul class="post-actions post-action-share" >
+      
+        <li class="post-action hide-lg hide-md hide-sm">
+          <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+            <i class="fa fa-share-alt" aria-hidden="true"></i>
+          </a>
+        </li>
+        
+          <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Facebook" aria-label="Share on Facebook">
+              <i class="fab fa-facebook-square" aria-hidden="true"></i>
+            </a>
+          </li>
+        
+          <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Twitter" aria-label="Share on Twitter">
+              <i class="fab fa-twitter" aria-hidden="true"></i>
+            </a>
+          </li>
+        
+          <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Google&#43;" aria-label="Share on Google&#43;">
+              <i class="fab fa-google-plus" aria-hidden="true"></i>
+            </a>
+          </li>
+        
+      
+      
+      <li class="post-action">
+        
+          <a class="post-action-btn btn btn--default" href="#top" aria-label="Back to top">
+          <i class="fa fa-arrow-up" aria-hidden="true"></i>
+        
+        </a>
+      </li>
+    </ul>
+  
+</div>
+
+      </div>
+      
+<div id="share-options-bar" class="share-options-bar" data-behavior="4">
+  <i id="btn-close-shareoptions" class="fa fa-times"></i>
+  <ul class="share-options">
+    
+      <li class="share-option">
+        <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=%2Fpost%2Finter-vt-x-mini-vt-%25E6%25A1%2586%25E6%259E%25B6%25E7%259A%2584%25E5%25AE%259E%25E7%258E%25B0%2F" aria-label="Share on Facebook">
+          <i class="fab fa-facebook-square" aria-hidden="true"></i><span>Share on Facebook</span>
+        </a>
+      </li>
+    
+      <li class="share-option">
+        <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=%2Fpost%2Finter-vt-x-mini-vt-%25E6%25A1%2586%25E6%259E%25B6%25E7%259A%2584%25E5%25AE%259E%25E7%258E%25B0%2F" aria-label="Share on Twitter">
+          <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+        </a>
+      </li>
+    
+      <li class="share-option">
+        <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=%2Fpost%2Finter-vt-x-mini-vt-%25E6%25A1%2586%25E6%259E%25B6%25E7%259A%2584%25E5%25AE%259E%25E7%258E%25B0%2F" aria-label="Share on Google&#43;">
+          <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google&#43;</span>
+        </a>
+      </li>
+    
+  </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+
+
+    </div>
+    
+    <div id="about">
+  <div id="about-card">
+    <div id="about-btn-close">
+      <i class="fa fa-times"></i>
+    </div>
+    
+      <img id="about-card-picture" src="images/jhin.png" alt="Author&#39;s picture" />
+    
+    <h4 id="about-card-name">jhin</h4>
+    
+      <div id="about-card-bio">SwapContext Error</div>
+    
+    
+      <div id="about-card-job">
+        <i class="fa fa-briefcase"></i>
+        <br/>
+        ShadowWalker
+      </div>
+    
+    
+      <div id="about-card-location">
+        <i class="fa fa-map-marker-alt"></i>
+        <br/>
+        Borderlands
+      </div>
+    
+  </div>
+</div>
+
+    
+
+    
+  
+    
+      <div id="cover" style="background-image:url('images/god.jpg');"></div>
+    
+  
+
+
+    
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/highlight.min.js" integrity="sha512-z+/WWfyD5tccCukM4VvONpEtLmbAm5LDu7eKiyMQJ9m7OfPEDL7gENyDRL3Yfe8XAuGsS2fS4xSMnl6d30kqGQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.7/js/jquery.fancybox.min.js" integrity="sha256-GEAnjcTqVP+vBp3SSc8bEDQqvWAZMiHyUSIorrWwH50=" crossorigin="anonymous"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js" integrity="sha512-uURl+ZXMBrF4AwGaWmEetzrd+J5/8NRkWAvJx5sbPSSuOb0bZLqf+tOzniObO00BjHa/dD7gub9oCGMLPQHtQA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+
+<script src="/js/script-31fgmcubbj1iu5yohwq2wbqgnmrxp5aguthrouulvjd0nqfyjwvfsn.min.js"></script>
+
+
+  
+    <script async crossorigin="anonymous" defer integrity="sha512-gE8KAQyFIzV1C9+GZ8TKJHZS2s+n7EjNtC+IMRn1l5+WYJTHOODUM6JSjZhFhqXmc7bG8Av6XXpckA4tYhflnw==" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/languages/apache.min.js"></script>
+  
+
+  
+    <script async crossorigin="anonymous" defer integrity="sha512-EWROca+bote+7Oaaar1F6y74iZj1r1F9rm/ly7o+/FwJopbBaWtsFDmaKoZDd3QiGU2pGacBirHJNivmGLYrow==" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/languages/go.min.js"></script>
+  
+
+  
+    <script async crossorigin="anonymous" defer integrity="sha512-GDVzAn0wpx1yVtQsRWmFc6PhJiLBPdUic+h4GWgljBh904O3JU10fk9EKNpVyIoPqkFn54rgL2QBG4BmUTMpiQ==" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/languages/http.min.js"></script>
+  
+
+  
+    <script async crossorigin="anonymous" defer integrity="sha512-UgZlma8NzkrDb/NWgmLIcTrH7i/CSnLLDRFqCSNF5NGPpjKmzyM25qcoXGOup8+cDakKyaiTDd7N4dyH4YT+IA==" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/languages/less.min.js"></script>
+  
+
+  
+    <script async crossorigin="anonymous" defer integrity="sha512-lot9koe73sfXIrUvIPM/UEhuMciN56RPyBdOyZgfO53P2lkWyyXN7J+njcxIIBRV+nVDQeiWtiXg+bLAJZDTfg==" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/languages/nginx.min.js"></script>
+  
+
+  
+    <script async crossorigin="anonymous" defer integrity="sha512-Zd3e7XxHP00TD0Imr0PIfeM0fl0v95kMWuhyAS3Wn1UTSXTkz0OhtRgBAr4JlmADRgiXr4x7lpeUdqaGN8xIog==" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/languages/puppet.min.js"></script>
+  
+
+  
+    <script async crossorigin="anonymous" defer integrity="sha512-qtqDO052iXMSP+5d/aE/jMtL9vIIGvONgTJziC2K/ZIB1yEGa55WVxGE9/08rSQ62EoDifS9SWVGZ7ihSLhzMA==" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/languages/scss.min.js"></script>
+  
+
+  
+    <script async crossorigin="anonymous" defer integrity="sha512-1NmkjnEDnwwwcu28KoQF8vs3oaPFokQHbmbtwGhFfeDsQZtVFI8zW2aE9O8yMYdpdyKV/5blE4pSWw4Z/Sv97w==" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/languages/stylus.min.js"></script>
+  
+
+  
+    <script async crossorigin="anonymous" defer integrity="sha512-B2wSfruPjr8EJL6IIzQr1eAuDwrsfIfccNf/LCEdxELCgC/S/ZMt/Uvk80aD79m7IqOqW+Sw8nbkvha20yZpzg==" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/languages/swift.min.js"></script>
+  
+
+  
+    <script async crossorigin="anonymous" defer integrity="sha512-28oDiQZGKUVN6wQ7PSLPNipOcmkCALXKwOi7bnkyFf8QiMZQxG9EQoy/iiNx6Zxj2cG2SbVa4dXKigQhu7GiFw==" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/languages/yaml.min.js"></script>
+  
+
+
+<script>
+$(document).ready(function() {
+  hljs.configure({ classPrefix: '', useBR: false });
+  $('pre.code-highlight > code, pre > code').each(function(i, block) {
+    if (!$(this).hasClass('codeblock')) {
+      $(this).addClass('codeblock');
+    }
+    hljs.highlightBlock(block);
+  });
+});
+</script>
+
+
+
+
+    
+  </body>
+</html>
+
