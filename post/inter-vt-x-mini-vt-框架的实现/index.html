@@ -482,7 +482,7 @@ Evaluate expression:
 </code></pre><p>我们可以看到对应msr寄存器的内容，第四个字节中的1代表该位必须置1，高四个字节中的0代表该位必须置0，在这里，15，16为1，也就对应一下情况发生时必须产生vmexit事件，然后VMM要对其进行拦截处理</p>
 <p><img src="https://jhinxs.github.io/images/assets/post1/page6.PNG" alt="avator">
 其余的字段填写是类似的，根据需要对应的bit位置位就行</p>
-<p>基本的area都按要求填写完毕，现在就可以vmlaunch启动你的虚拟机了，但是这个时候我们还没有对虚拟机的vmexit事件做处理，一个基本的情况就是，一运行之后，vmexit事件产出，代码就会跳转到先前指定的hostarea_rip的位置，说明你学要对这个vmexit世界进行处理，然后再vmresume，让vm继续运行</p>
+<p>基本的area都按要求填写完毕，现在就可以vmlaunch启动你的虚拟机了，但是这个时候我们还没有对虚拟机的vmexit事件做处理，一个基本的情况就是，一运行之后，vmexit事件产出，代码就会跳转到先前指定的hostarea_rip的位置，说明你需要对这个vmexit世界进行处理，然后再vmresume，让vm继续运行</p>
 <p>而vmexit产生的原因，可以通过vmread VM_EXIT_REASON得到，参考inter-64-ia-32&ndash;system-programming-manual-vol-3 附录3 VMX Basic Exit Reasons 表格，一般基础的代码写完之后，遇到最多的一个vmexit原因就是CR3的读取和写入，需要注意的，在这个地方，接管vm过来的代码，处理vmexit时，要记得保存现场，就是一些寄存器要保存，在处理完事件之后，恢复即可</p>
 <pre tabindex="0"><code>vmx_vmmhostentry proc
         
@@ -494,7 +494,7 @@ Evaluate expression:
         
 vmx_vmmhostentry endp
 
-</code></pre><p>这个地方保存的时候，保存之前Guest域中没用填写的就可以了，其他的会自己保存在那个域里面，这里我只保存了下通用寄存器，VmhostEntrydbg是定义的一个vmexit处理函数</p>
+</code></pre><p>这个地方保存的时候，保存之前Guest域中没有填写的就可以了，其他的会自己保存在那个域里面，这里我只保存了下通用寄存器，VmhostEntrydbg是定义的一个vmexit处理函数</p>
 <p>以CR3的读写为例，部分代码：</p>
 <pre tabindex="0"><code>    CrQulification = vmx_vmread(VMCS_EXIT_QUALIFICTION);
     CRNumber = (CrQulification &amp; 0x0000000f);
@@ -554,7 +554,7 @@ VTenable_before endp
 <pre tabindex="0"><code>    for (int i = 0; i &lt; KeNumberProcessors; i++)
     {
         KeSetSystemAffinityThread((KAFFINITY)(1 &lt;&lt; i));
-        VT_Disable();
+        VT_Enable();
         KeRevertToUserAffinityThread();
         DbgPrint(&quot;stop vt on cpu [%d]...\n&quot;, i);
     }
