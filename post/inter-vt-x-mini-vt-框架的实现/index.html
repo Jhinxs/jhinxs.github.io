@@ -7,17 +7,17 @@
 {  
   "@context":"http://schema.org",
   "@type":"Website",
-  "@id":"https:\/\/jhinxs.github.io\/",
+  "@id":"https:\/\/jhinxs.com",
   "author": {
     "@type": "Person",
     "name": "jhin",
     
-    "image": "https://jhinxs.github.io/images/jhin.png"
+    "image": "https://jhinxs.com/images/jhin.png"
     
   },
   "name":"Jhin\u0027s Story",
   "description":"Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，",
-  "url":"https:\/\/jhinxs.github.io\/post\/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0\/",
+  "url":"https:\/\/jhinxs.com\/post\/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0\/",
   "keywords":"[tech, 74, 104, 105, 110, 239, 188, 140, 75, 101, 114, 110, 101, 108, 239, 188, 140, 114, 101, 100, 116, 101, 97, 109, 239, 188, 140, 86, 84, 239, 188, 140, 82, 101, 118, 101, 114, 115, 101, 239, 188, 140, 67, 111, 100, 101, 239, 188, 140, 231, 186, 162, 233, 152, 159, 239, 188, 140, 229, 134, 133, 230, 160, 184]"
 }
 
@@ -35,8 +35,8 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="Inter VT-x mini VT 框架的实现">
 <meta name="twitter:title" content="Inter VT-x mini VT 框架的实现">
-<meta property="og:url" content="https://jhinxs.github.io/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">
-<meta property="twitter:url" content="https://jhinxs.github.io/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+<meta property="og:url" content="https://jhinxs.com/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+<meta property="twitter:url" content="https://jhinxs.com/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">
 <meta property="og:site_name" content="Jhin&#39;s Story">
 <meta property="og:description" content="Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，">
 <meta name="twitter:description" content="Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，">
@@ -71,25 +71,25 @@
 
 
 
-  <meta property="og:image" content="https://jhinxs.github.io/images/jhin.png">
-  <meta property="twitter:image" content="https://jhinxs.github.io/images/jhin.png">
+  <meta property="og:image" content="https://jhinxs.com/images/jhin.png">
+  <meta property="twitter:image" content="https://jhinxs.com/images/jhin.png">
 
 
 
 
 
-  <meta property="og:image" content="https://jhinxs.github.io/images/assets/post1/thumbnailImage.PNG">
-  <meta property="twitter:image" content="https://jhinxs.github.io/images/assets/post1/thumbnailImage.PNG">
+  <meta property="og:image" content="https://jhinxs.com/images/assets/post1/thumbnailImage.PNG">
+  <meta property="twitter:image" content="https://jhinxs.com/images/assets/post1/thumbnailImage.PNG">
 
 
     <title>Inter VT-x mini VT 框架的实现</title>
 
-    <link rel="icon" href="https://jhinxs.github.io/images/jhin.png">
+    <link rel="icon" href="https://jhinxs.com/images/jhin.png">
     
 
     
 
-    <link rel="canonical" href="https://jhinxs.github.io/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+    <link rel="canonical" href="https://jhinxs.com/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">
 
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -97,7 +97,7 @@
     
     
     
-    <link rel="stylesheet" href="https://jhinxs.github.io/css/style-ntiofhzmjvh7c8uxrsev8vpfblm8lzatbsighnuy1am1kkxedeogtbrvv3.min.css" />
+    <link rel="stylesheet" href="https://jhinxs.com/css/style-ntiofhzmjvh7c8uxrsev8vpfblm8lzatbsighnuy1am1kkxedeogtbrvv3.min.css" />
     
     
       
@@ -182,7 +182,7 @@
       <header id="header" data-behavior="4">
   <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
   <div class="header-title">
-    <a class="header-title-link" href="https://jhinxs.github.io/" aria-label="Go to homepage">Jhin&#39;s Story</a>
+    <a class="header-title-link" href="https://jhinxs.com/" aria-label="Go to homepage">Jhin&#39;s Story</a>
   </div>
   
 </header>
@@ -191,8 +191,8 @@
   <div class="sidebar-container">
     
       <div class="sidebar-profile">
-        <a href="https://jhinxs.github.io/#about" aria-label="Read more about the author">
-          <img class="sidebar-profile-picture" src="https://jhinxs.github.io/images/jhin.png" alt="Author&#39;s picture" />
+        <a href="https://jhinxs.com/#about" aria-label="Read more about the author">
+          <img class="sidebar-profile-picture" src="https://jhinxs.com/images/jhin.png" alt="Author&#39;s picture" />
         </a>
         <h4 class="sidebar-profile-name">jhin</h4>
         
@@ -210,7 +210,7 @@
       
   <li class="sidebar-button">
     
-      <a class="sidebar-button-link " href="https://jhinxs.github.io/" title="Home">
+      <a class="sidebar-button-link " href="https://jhinxs.com/" title="Home">
     
       <i class="sidebar-button-icon fas fa-lg fa-home" aria-hidden="true"></i>
       
@@ -220,7 +220,7 @@
 
   <li class="sidebar-button">
     
-      <a class="sidebar-button-link " href="https://jhinxs.github.io/categories" title="Categories">
+      <a class="sidebar-button-link " href="https://jhinxs.com/categories" title="Categories">
     
       <i class="sidebar-button-icon fas fa-lg fa-bookmark" aria-hidden="true"></i>
       
@@ -230,7 +230,7 @@
 
   <li class="sidebar-button">
     
-      <a class="sidebar-button-link " href="https://jhinxs.github.io/tags" title="Tags">
+      <a class="sidebar-button-link " href="https://jhinxs.com/tags" title="Tags">
     
       <i class="sidebar-button-icon fas fa-lg fa-tags" aria-hidden="true"></i>
       
@@ -240,7 +240,7 @@
 
   <li class="sidebar-button">
     
-      <a class="sidebar-button-link " href="https://jhinxs.github.io/#about" title="About">
+      <a class="sidebar-button-link " href="https://jhinxs.com/#about" title="About">
     
       <i class="sidebar-button-icon fas fa-lg fa-question" aria-hidden="true"></i>
       
@@ -264,7 +264,7 @@
 
   <li class="sidebar-button">
     
-      <a class="sidebar-button-link " href="https://jhinxs.github.io/archives" title="Archives">
+      <a class="sidebar-button-link " href="https://jhinxs.com/archives" title="Archives">
     
       <i class="sidebar-button-icon fas fa-lg fa-archive" aria-hidden="true"></i>
       
@@ -310,7 +310,7 @@
   
     <span>in</span>
     
-      <a class="category-link" href="https://jhinxs.github.io/categories/windows-kernel">Windows Kernel</a>
+      <a class="category-link" href="https://jhinxs.com/categories/windows-kernel">Windows Kernel</a>
     
   
 
@@ -321,7 +321,7 @@
           <div class="post-content markdown">
             <div class="main-content-wrap">
               <p>  Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，新的环境也会引入一些新的特权指令等新的功能。在设计架构上和SVM类似，分为VMM和VMGUEST两种角色，分别处于VMX-ROOT和VMX-NO ROOT模式下</p>
-<p><img src="https://jhinxs.github.io/images/assets/post1/page1.PNG" alt="avator"></p>
+<p><img src="https://jhinxs.com/images/assets/post1/page1.PNG" alt="avator"></p>
 <p>对于虚拟机来说，Hypervisor是完全透明的，当Guest客户机发生vmexit事件后会陷入到Hypervisor，此时控制权完全交与Hypervisor，而Hypervisor同样可以通过vmlaunch运行虚拟机，或者在处理完vmexit事件后，通过vmresume指令，继续运行虚拟机</p>
 <h3 id="vt框架实现流程">VT框架实现流程</h3>
 <p>本代码用于学习研究，运行于32位操作系统之上，在代码实现VT的时候，主要是需要遵循Inter开发手册的标准，我这里实现的时候，大概是以下的流程:</p>
@@ -342,7 +342,7 @@
 <h3 id="代码部分">代码部分</h3>
 <p>这个代码写的也是一波三折，蓝屏N次，也是各种坑，虽然可以有参考代码，但实际上有很多因素，遇到比如像保存现场代码的优化，多核处理等等诸多问题</p>
 <p>首先是开启VT的前期，检测阶段，首先就是通过CPUID指令，这个指令执行前，需要将EAX寄存器置为1，返回值会存在ECX寄存器中，这里CPUID置1是Inter的要求，如果EAX中是其他值，返回的信息也是不同的，只是在这里用作CPU VTZ支持检测，EAX需要置1
-<img src="https://jhinxs.github.io/images/assets/post1/page2.PNG" alt="avator"></p>
+<img src="https://jhinxs.com/images/assets/post1/page2.PNG" alt="avator"></p>
 <pre tabindex="0"><code>get_cpuid_info proc,_para:dword
        
         pushad
@@ -371,7 +371,7 @@ get_cpuid_info endp
         return STATUS_UNSUCCESSFUL;
     }
 </code></pre><p>分配VMXON Region区域，读取MSR寄存器，获取VMCS标识并用其初始化VMXON Region，白皮书中说设置前31位，这里需要注意分配非分页内存，然后就可以通过VMXON进入虚拟机模式了，这里首先要获取VMXON Region区域的物理地址，作为参数传递给VMXON，执行完VMXON后需要验证Eflags寄存器的CF位和ZF是否为0，0表示开启成功（参考 inter-64-ia-32&ndash;system-programming-manual-vol-3 Chapter 24.1）
-<img src="https://jhinxs.github.io/images/assets/post1/page3.PNG" alt="avator"></p>
+<img src="https://jhinxs.com/images/assets/post1/page3.PNG" alt="avator"></p>
 <pre tabindex="0"><code>vmx_on proc,LowPart:dword,HighPart:dword
 
         push HighPart
@@ -427,7 +427,7 @@ vmx_on endp
 <li>VM-Exit Information Fields（VMExit 信息域）:表示了VM发生EXIT事件的原因，可以和VM-Execution Control Fields做配合调试</li>
 </ul>
 <p>这里学到一个小技巧，可以根据vmlaunch指令的运行，配合vmread VM_INSTRUCTION_ERROR，来判断这些域基本填写是否正确，错误码对应的原因可以查Chapter30.4
-<img src="https://jhinxs.github.io/images/assets/post1/page4.PNG" alt="avator"></p>
+<img src="https://jhinxs.com/images/assets/post1/page4.PNG" alt="avator"></p>
 <p>首先是填写Host Area,使用如下类似的填写方式，这里要注意的是必须使用vmwrite的方式，给对应的字段填写，不能自己通过指针啥的方式</p>
 <pre tabindex="0"><code>    vmx_vmwrite(VMCS_HOSTAREA_CR0, __readcr0());
     vmx_vmwrite(VMCS_HOSTAREA_CR3, __readcr3());
@@ -444,7 +444,7 @@ vmx_on endp
 <pre tabindex="0"><code>vmx_vmwrite(VMCS_HOSTAREA_RIP, (ULONG)vmx_vmmhostentry);
 </code></pre><p>Chapter24.5可以看到，inter规定必须要填写的字段，像读取段寄存器，控制寄存器这种网上都是构建汇编如mov eax,es 这种也可以，不过比较推荐使用微软提供的库:#include &lt;intrin.h&gt;,微软出品，必属精品</p>
 <p>Guest Area填写的东西就比较多了，比如像填写段寄存器，需要填写选择子，base,limit以及属性，这里参考了newbluepill的方式，动态的去GDT表里面解析段描述符，获取各种字段所需的值
-<img src="https://jhinxs.github.io/images/assets/post1/page5.PNG" alt="avator"></p>
+<img src="https://jhinxs.com/images/assets/post1/page5.PNG" alt="avator"></p>
 <pre tabindex="0"><code>	SegDesc = (PSEGMENT_DESCRIPTOR2)((PUCHAR)GdtBase + (Selector &amp; ~0x7));
 	// 段选择子
 	SegmentSelector-&gt;sel = Selector;
@@ -480,7 +480,7 @@ Evaluate expression:
   Double:  3.32171e-316
 
 </code></pre><p>我们可以看到对应msr寄存器的内容，第四个字节中的1代表该位必须置1，高四个字节中的0代表该位必须置0，在这里，15，16为1，也就对应一下情况发生时必须产生vmexit事件，然后VMM要对其进行拦截处理</p>
-<p><img src="https://jhinxs.github.io/images/assets/post1/page6.PNG" alt="avator">
+<p><img src="https://jhinxs.com/images/assets/post1/page6.PNG" alt="avator">
 其余的字段填写是类似的，根据需要对应的bit位置位就行</p>
 <p>基本的area都按要求填写完毕，现在就可以vmlaunch启动你的虚拟机了，但是这个时候我们还没有对虚拟机的vmexit事件做处理，一个基本的情况就是，一运行之后，vmexit事件产出，代码就会跳转到先前指定的hostarea_rip的位置，说明你需要对这个vmexit世界进行处理，然后再vmresume，让vm继续运行</p>
 <p>而vmexit产生的原因，可以通过vmread VM_EXIT_REASON得到，参考inter-64-ia-32&ndash;system-programming-manual-vol-3 附录3 VMX Basic Exit Reasons 表格，一般基础的代码写完之后，遇到最多的一个vmexit原因就是CR3的读取和写入，需要注意的，在这个地方，接管vm过来的代码，处理vmexit时，要记得保存现场，就是一些寄存器要保存，在处理完事件之后，恢复即可</p>
@@ -512,7 +512,7 @@ vmx_vmmhostentry endp
             break;
         }
 </code></pre><p>这里读取了一个QUALIFICTION这样的一个信息，这个信息可以理解为在发生对CR寄存器的访问和写入时的具体信息，如是从那个寄存器写入的，是读取还是写入，参考chapter 27.2</p>
-<p><img src="https://jhinxs.github.io/images/assets/post1/page7.PNG" alt="avator">
+<p><img src="https://jhinxs.com/images/assets/post1/page7.PNG" alt="avator">
 其中的bit位就对应了相关信息，只需要做一下解析就行了，例如通过bit postions 3:0 你可以获取到和那个CR寄存器发生了交互，在32位机器上bit3总为0，bit postions 5:4代表读取还是写入，0代表CR是目的操作数，此时写入，1代表源操作数，此时读取，这里的11：8要注意这个寄存器的顺序，因为我们要拦截对CR寄存器的操作，意味着我们要帮助vm完成这个过程，通过bit postions 11：8得到和CR寄存器交互的寄存器后一般如果构造这样一个结构体保存了这些通用寄存器的话，你需要注意你的寄存器的排列顺序</p>
 <p>处理完vmexit事件后，就要返回VM了，这里的小细节：</p>
 <pre tabindex="0"><code>    ULONG instructionlen = vmx_vmread(VMCS_INSTRUCTION_LENGH);
@@ -524,7 +524,7 @@ vmx_vmmhostentry endp
 <h3 id="扩展">扩展</h3>
 <p>1.VMEXIT导致GDT Limit发生改变，使用ARK工具查看GDT相关信息时出发BSoD</p>
 <p>这个是在看zhouhe的VT教程看到的，至于原因，白皮书说,VMEXIT时会加载一些host的CR寄存器,msr寄存器,加载GDTR和IDTR时，limit会从3ff变为ffff：
-<img src="https://jhinxs.github.io/images/assets/post1/page8.PNG" alt="avator"></p>
+<img src="https://jhinxs.com/images/assets/post1/page8.PNG" alt="avator"></p>
 <p>在驱动加载,开启VT前可以保存一份GDTR，驱动卸载，关闭VT后恢复即可</p>
 <p>2.VM第一次初始化运行，驱动继续执行的问题,就是说我们运行vmlaunch之后，进入虚拟机里，后续的驱动代码时不会执行的，卡死的状态，所以我们要构造一个上下文环境，在vmlaunch之后，我们的驱动代码可以正常执行完毕：</p>
 <pre tabindex="0"><code>    VTenable_before();
@@ -581,9 +581,9 @@ VTenable_before endp
                   <div class="post-footer-tags">
                     <span class="text-color-light text-small">TAGGED IN</span><br/>
                     
-  <a class="tag tag--primary tag--small" href="https://jhinxs.github.io/tags/kernel/">Kernel</a>
+  <a class="tag tag--primary tag--small" href="https://jhinxs.com/tags/kernel/">Kernel</a>
 
-  <a class="tag tag--primary tag--small" href="https://jhinxs.github.io/tags/vt/">VT</a>
+  <a class="tag tag--primary tag--small" href="https://jhinxs.com/tags/vt/">VT</a>
 
                   </div>
                 
@@ -596,7 +596,7 @@ VTenable_before endp
           
             <li class="post-action">
               
-                <a class="post-action-btn btn btn--disabled">
+                <a class="post-action-btn btn btn--default tooltip--top" href="https://jhinxs.com/post/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" data-tooltip="x64的一些特性" aria-label="NEXT: x64的一些特性">
               
                   <i class="fa fa-angle-left"></i>
                   <span class="hide-xs hide-sm text-small icon-ml">NEXT</span>
@@ -622,19 +622,19 @@ VTenable_before endp
         </li>
         
           <li class="post-action hide-xs">
-            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://jhinxs.github.io/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Facebook" aria-label="Share on Facebook">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://jhinxs.com/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Facebook" aria-label="Share on Facebook">
               <i class="fab fa-facebook-square" aria-hidden="true"></i>
             </a>
           </li>
         
           <li class="post-action hide-xs">
-            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://jhinxs.github.io/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Twitter" aria-label="Share on Twitter">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://jhinxs.com/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Twitter" aria-label="Share on Twitter">
               <i class="fab fa-twitter" aria-hidden="true"></i>
             </a>
           </li>
         
           <li class="post-action hide-xs">
-            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://jhinxs.github.io/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Google&#43;" aria-label="Share on Google&#43;">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://jhinxs.com/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Google&#43;" aria-label="Share on Google&#43;">
               <i class="fab fa-google-plus" aria-hidden="true"></i>
             </a>
           </li>
@@ -673,7 +673,7 @@ VTenable_before endp
           
             <li class="post-action">
               
-                <a class="post-action-btn btn btn--disabled">
+                <a class="post-action-btn btn btn--default tooltip--top" href="https://jhinxs.com/post/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" data-tooltip="x64的一些特性" aria-label="NEXT: x64的一些特性">
               
                   <i class="fa fa-angle-left"></i>
                   <span class="hide-xs hide-sm text-small icon-ml">NEXT</span>
@@ -699,19 +699,19 @@ VTenable_before endp
         </li>
         
           <li class="post-action hide-xs">
-            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://jhinxs.github.io/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Facebook" aria-label="Share on Facebook">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://jhinxs.com/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Facebook" aria-label="Share on Facebook">
               <i class="fab fa-facebook-square" aria-hidden="true"></i>
             </a>
           </li>
         
           <li class="post-action hide-xs">
-            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://jhinxs.github.io/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Twitter" aria-label="Share on Twitter">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://jhinxs.com/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Twitter" aria-label="Share on Twitter">
               <i class="fab fa-twitter" aria-hidden="true"></i>
             </a>
           </li>
         
           <li class="post-action hide-xs">
-            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://jhinxs.github.io/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Google&#43;" aria-label="Share on Google&#43;">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://jhinxs.com/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Share on Google&#43;" aria-label="Share on Google&#43;">
               <i class="fab fa-google-plus" aria-hidden="true"></i>
             </a>
           </li>
@@ -736,19 +736,19 @@ VTenable_before endp
   <ul class="share-options">
     
       <li class="share-option">
-        <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fjhinxs.github.io%2Fpost%2Finter-vt-x-mini-vt-%25E6%25A1%2586%25E6%259E%25B6%25E7%259A%2584%25E5%25AE%259E%25E7%258E%25B0%2F" aria-label="Share on Facebook">
+        <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fjhinxs.com%2Fpost%2Finter-vt-x-mini-vt-%25E6%25A1%2586%25E6%259E%25B6%25E7%259A%2584%25E5%25AE%259E%25E7%258E%25B0%2F" aria-label="Share on Facebook">
           <i class="fab fa-facebook-square" aria-hidden="true"></i><span>Share on Facebook</span>
         </a>
       </li>
     
       <li class="share-option">
-        <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https%3A%2F%2Fjhinxs.github.io%2Fpost%2Finter-vt-x-mini-vt-%25E6%25A1%2586%25E6%259E%25B6%25E7%259A%2584%25E5%25AE%259E%25E7%258E%25B0%2F" aria-label="Share on Twitter">
+        <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https%3A%2F%2Fjhinxs.com%2Fpost%2Finter-vt-x-mini-vt-%25E6%25A1%2586%25E6%259E%25B6%25E7%259A%2584%25E5%25AE%259E%25E7%258E%25B0%2F" aria-label="Share on Twitter">
           <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
         </a>
       </li>
     
       <li class="share-option">
-        <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https%3A%2F%2Fjhinxs.github.io%2Fpost%2Finter-vt-x-mini-vt-%25E6%25A1%2586%25E6%259E%25B6%25E7%259A%2584%25E5%25AE%259E%25E7%258E%25B0%2F" aria-label="Share on Google&#43;">
+        <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https%3A%2F%2Fjhinxs.com%2Fpost%2Finter-vt-x-mini-vt-%25E6%25A1%2586%25E6%259E%25B6%25E7%259A%2584%25E5%25AE%259E%25E7%258E%25B0%2F" aria-label="Share on Google&#43;">
           <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google&#43;</span>
         </a>
       </li>
@@ -766,7 +766,7 @@ VTenable_before endp
       <i class="fa fa-times"></i>
     </div>
     
-      <img id="about-card-picture" src="https://jhinxs.github.io/images/jhin.png" alt="Author&#39;s picture" />
+      <img id="about-card-picture" src="https://jhinxs.com/images/jhin.png" alt="Author&#39;s picture" />
     
     <h4 id="about-card-name">jhin</h4>
     
@@ -794,7 +794,7 @@ VTenable_before endp
     
   
     
-      <div id="cover" style="background-image:url('https://jhinxs.github.io/images/god.jpg');"></div>
+      <div id="cover" style="background-image:url('https://jhinxs.com/images/god.jpg');"></div>
     
   
 
@@ -809,7 +809,7 @@ VTenable_before endp
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js" integrity="sha512-uURl+ZXMBrF4AwGaWmEetzrd+J5/8NRkWAvJx5sbPSSuOb0bZLqf+tOzniObO00BjHa/dD7gub9oCGMLPQHtQA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 
-<script src="https://jhinxs.github.io/js/script-31fgmcubbj1iu5yohwq2wbqgnmrxp5aguthrouulvjd0nqfyjwvfsn.min.js"></script>
+<script src="https://jhinxs.com/js/script-31fgmcubbj1iu5yohwq2wbqgnmrxp5aguthrouulvjd0nqfyjwvfsn.min.js"></script>
 
 
   

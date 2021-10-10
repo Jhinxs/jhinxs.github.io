@@ -2,17 +2,26 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Categories on Jhin&#39;s Story</title>
-    <link>https://jhinxs.github.io/categories/</link>
+    <link>https://jhinxs.com/categories/</link>
     <description>Recent content in Categories on Jhin&#39;s Story</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 02 Jun 2021 12:37:55 +0800</lastBuildDate><atom:link href="https://jhinxs.github.io/categories/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 21 Aug 2021 12:37:55 +0800</lastBuildDate><atom:link href="https://jhinxs.com/categories/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Windows OS</title>
+      <link>https://jhinxs.com/categories/windows-os/</link>
+      <pubDate>Sat, 21 Aug 2021 12:37:55 +0800</pubDate>
+      
+      <guid>https://jhinxs.com/categories/windows-os/</guid>
+      <description></description>
+    </item>
+    
     <item>
       <title>Windows Kernel</title>
-      <link>https://jhinxs.github.io/categories/windows-kernel/</link>
+      <link>https://jhinxs.com/categories/windows-kernel/</link>
       <pubDate>Wed, 02 Jun 2021 12:37:55 +0800</pubDate>
       
-      <guid>https://jhinxs.github.io/categories/windows-kernel/</guid>
+      <guid>https://jhinxs.com/categories/windows-kernel/</guid>
       <description></description>
     </item>
     

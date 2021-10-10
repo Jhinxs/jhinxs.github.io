@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Windows OS on Jhin&#39;s Story</title>
+    <link>https://jhinxs.com/categories/windows-os/</link>
+    <description>Recent content in Windows OS on Jhin&#39;s Story</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 21 Aug 2021 12:37:55 +0800</lastBuildDate><atom:link href="https://jhinxs.com/categories/windows-os/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>x64的一些特性</title>
+      <link>https://jhinxs.com/post/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/</link>
+      <pubDate>Sat, 21 Aug 2021 12:37:55 +0800</pubDate>
+      
+      <guid>https://jhinxs.com/post/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/</guid>
+      <description>寄存器 首先是寄存器数值的宽度，除去标志寄存器和段寄存器(段寄存器长度均为96位，其中有16位的可见部分和80位的不可见部分)外，均为8个字节64位宽度，在32位平台的基础上，增加了R8~R15共8个寄</description>
+    </item>
+    
+  </channel>
+</rss>
