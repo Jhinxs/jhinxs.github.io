@@ -1,20 +1,33 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>Windows OS on Jhin&#39;s Story</title>
-    <link>https://jhinxs.com/categories/windows-os/</link>
-    <description>Recent content in Windows OS on Jhin&#39;s Story</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    <lastBuildDate>Sat, 21 Aug 2021 12:37:55 +0800</lastBuildDate><atom:link href="https://jhinxs.com/categories/windows-os/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>x64的一些特性</title>
-      <link>https://jhinxs.com/post/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/</link>
-      <pubDate>Sat, 21 Aug 2021 12:37:55 +0800</pubDate>
-      
-      <guid>https://jhinxs.com/post/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/</guid>
-      <description>寄存器 首先是寄存器数值的宽度，除去标志寄存器和段寄存器(段寄存器长度均为96位，其中有16位的可见部分和80位的不可见部分)外，均为8个字节64位宽度，在32位平台的基础上，增加了R8~R15共8个寄</description>
-    </item>
-    
-  </channel>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>Windows OS - Category - Jhin&#39;s Story</title>
+        <link>https://jhinxs.com/categories/windows-os/</link>
+        <description>Windows OS - Category - Jhin&#39;s Story</description>
+        <generator>Hugo -- gohugo.io</generator><language>en</language><copyright>jhinxs story</copyright><lastBuildDate>Sat, 21 Aug 2021 12:37:55 &#43;0800</lastBuildDate><atom:link href="https://jhinxs.com/categories/windows-os/" rel="self" type="application/rss+xml" /><item>
+    <title>x64的一些特性</title>
+    <link>https://jhinxs.com/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/</link>
+    <pubDate>Sat, 21 Aug 2021 12:37:55 &#43;0800</pubDate>
+    <author>Author</author>
+    <guid>https://jhinxs.com/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/</guid>
+    <description><![CDATA[寄存器 首先是寄存器数值的宽度，除去标志寄存器和段寄存器(段寄存器长度均为96位，其中有16位的可见部分和80位的不可见部分)外，均为8个字节64位宽度，在32位平台的基础上，增加了R8~R15共8个寄存器
+
+ 易变寄存器:RAX,RCX,RDX,R8-R11 非易变寄存器：RBP,RBX,RSI,RDI,R12-R15  FS与GS 32位的操作系统中，FS寄存器在3环执向TEB结构体，0环指向KPCR结构体，在X64中，则是使用GS寄存器
+
+微软提供了IA32_FS_BASE(0xC0000100)和IA32_GS_BASE MSR(0xC0000101)寄存器用于获取Base,因为如果用段描述的方式去获取Base的话，在64位的段描述符中，是没法再放入64位的地址
+
+FS则继续给Wow64提供服务，也就是32位的应用程序
+内存布局与内存模型 x64下内存分配，理论可以使用2^64次大小的内存空间，但是实际操作系统设计时只用了其中的48位，x64采用了9-9-9-9-12分页，也就是PML4T分页，按照32位操作系统非PAE分页的套路，也即10-10-12分页，PDE-PTE-offset，总的内存1024x1024x4k=4Gb，其中用户和内核各使用了2GB,在x64下理论上支持，512x512x512x512x4k=256Tb，实际上windows支持16TB左右的空间 其中:
+ 用户空间:0x00000000~00000000 &mdash; 0x000007fff~ffffffff 内核空间:0xfffff800~00000000 &mdash; 0xffffffff~ffffffff  IA-32架构下主要内存模型为:Basic Flat Module(基本的平坦模型)，Protect Flat Module(受保护的平坦模式)，Multi-Segment Module(分段内存模型)
+  Basic Flat Module(基本的平坦模型)
+最为简单的一种模型，操作系统和应用程序可以访问不受限制的内存空间，没有任何的分段机制，根据inter开发手册所说，一个最简单的平坦模型，至少建立两个段描述符，一个数据，一个代码，分别指向了数据段，代码段，但是都被映射到基址为0，限长为4gb的内存空间，即便访问的地址超过了实际物理内存的最大地址，也不会报错
+  
+  Protect Flat Module(受保护的平坦模式)
+主要是在基本的平坦模型中，提供了内存访问保护，超出界限后会出发保护异常，同样有了特权级机制的段权限分配，也即用户模式和内核模式，这些段的基址都是从0开始，也就是说这些段在内存空间上来说都是重叠的，逻辑上划分为不同的用途
+  
+  Multi-Segment Module(分段内存模型)
+相较于前两种，稍稍复杂一点，这种对于不同用途的段在内存划分上也分离开来，实现真正的内存分段，对不同段，如代码段，数据段，内存访问采用seg base+offset的形式，采用了强制的硬件级的保护机制，每个应用程序可以有自己的私有段，也可以和其他程序共享，同样的，段权限检查和访问控制机制，都可以阻止如内存越界等非法访问操作
+  
+在x64中，根据inter开发手册:
+ In 64-bit mode, segmentation is generally (but not completely) disabled, creating a flat 64-bit linear-address space.]]></description>
+</item></channel>
 </rss>

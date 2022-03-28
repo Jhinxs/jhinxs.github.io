@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Abouts on Jhin&#39;s Story</title>
+    <link>https://jhinxs.com/zh-cn/about/</link>
+    <description>Recent content in Abouts on Jhin&#39;s Story</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <copyright>Jhinxs</copyright><atom:link href="https://jhinxs.com/zh-cn/about/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>About Me</title>
+      <link>https://jhinxs.com/zh-cn/about/aboutme/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://jhinxs.com/zh-cn/about/aboutme/</guid>
+      <description>暂无</description>
+    </item>
+    
+  </channel>
+</rss>

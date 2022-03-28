@@ -1,29 +1,37 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>VT on Jhin&#39;s Story</title>
-    <link>https://jhinxs.com/tags/vt/</link>
-    <description>Recent content in VT on Jhin&#39;s Story</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    <lastBuildDate>Wed, 02 Mar 2022 15:22:06 +0800</lastBuildDate><atom:link href="https://jhinxs.com/tags/vt/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>Intel VT x64 EPT Hook框架的实现</title>
-      <link>https://jhinxs.com/post/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
-      <pubDate>Wed, 02 Mar 2022 15:22:06 +0800</pubDate>
-      
-      <guid>https://jhinxs.com/post/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
-      <description>主要记录下X64VT以及实现EPT Hook时的一些关键点 基本的VT开启 这部分和之前32位的没什么太大的区别，主要是在填写vmc字段时，需要额外填写如IA32_EFER，IA32E_MODE这种必须要填</description>
-    </item>
-    
-    <item>
-      <title>Intel VT-x mini VT 框架的实现</title>
-      <link>https://jhinxs.com/post/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
-      <pubDate>Wed, 02 Jun 2021 12:37:55 +0800</pubDate>
-      
-      <guid>https://jhinxs.com/post/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
-      <description>Intel VT-x是Intel芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，</description>
-    </item>
-    
-  </channel>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>VT - Tag - Jhin&#39;s Story</title>
+        <link>https://jhinxs.com/tags/vt/</link>
+        <description>VT - Tag - Jhin&#39;s Story</description>
+        <generator>Hugo -- gohugo.io</generator><language>en</language><copyright>jhinxs story</copyright><lastBuildDate>Wed, 02 Mar 2022 15:22:06 &#43;0800</lastBuildDate><atom:link href="https://jhinxs.com/tags/vt/" rel="self" type="application/rss+xml" /><item>
+    <title>Intel VT x64 EPT Hook框架的实现</title>
+    <link>https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
+    <pubDate>Wed, 02 Mar 2022 15:22:06 &#43;0800</pubDate>
+    <author>Author</author>
+    <guid>https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
+    <description><![CDATA[主要记录下X64VT以及实现EPT Hook时的一些关键点
+基本的VT开启 这部分和之前32位的没什么太大的区别，主要是在填写vmc字段时，需要额外填写如IA32_EFER，IA32E_MODE这种必须要填写的，还有像RDTSCP这种在新的win10上面系统上面做引发VMEXIT需要填写的，这种主要是为了兼容性考虑。 开启EPT的话需要在SECONDARY VM execution Control Field字段里面填写对应的enable ept字段，一般来讲不是太老的CPU都是支持的。
+而在X64上多核处理的话，主要是使用KeGenericCallDpc来调用我们的VT初始化或者你需要的其他需要进行多核同步的过程，这个API就是让多个CPU同时以特殊的DPC例程执行我们的代码。
+其他就是一些数据类型，寄存器的更改，换成64位的模式
+EPT内存管理 EPT是intel为内存虚拟化而设计的一种硬件机制，主要是是为了实现Guest对于物理内存的访问控制
+
+因为EPT的存在，Guest对一个地址访问时，每当访问一个物理地址，都会走EPT物理地址转化的过程，这个过程和x64下的VA-&gt;PA的转换过程类似，例如访问Guest访问某个进程物理地址，首先找到CR3，此时访问CR3中的物理地址，就会触发GPA-&gt;HPA的EPT转换过程，然后访问PML4，PDE等物理地址时，都会触发一个EPT的转换，这也是VT开启EPT后性能损耗的原因之一，关于EPT各个表项的内容可以查看参考 Intel-64-ia-32&ndash;system-programming-manual-vol-3 Chapter 28.2
+EPT的构建 EPT的构建，感觉就是实现一个具体的地址转换的过程，从EPTP的构建，以及其中PML4,PDPT,PDT其中各个表项的各个字段的填写
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16  pEptState-&gt;EptPageTable = PageTable; PageTable-&gt;PML4[0].all = 0; PageTable-&gt;PML4[0].Bits.read_access = 1; PageTable-&gt;PML4[0].Bits.write_access = 1; PageTable-&gt;PML4[0].Bits.exec_access_supervisor = 1; PageTable-&gt;PML4[0].Bits.PDPTPFN = MmGetPhysicalAddress(&amp;PageTable-&gt;PML3[0]).QuadPart &gt;&gt; 12; for (int i = 0; i &lt; VMM_EPT_PML3E_COUNT; i++) { PageTable-&gt;PML3[i].all = 0; PageTable-&gt;PML3[i].]]></description>
+</item><item>
+    <title>Intel VT-x mini VT 框架的实现</title>
+    <link>https://jhinxs.com/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
+    <pubDate>Wed, 02 Jun 2021 12:37:55 &#43;0800</pubDate>
+    <author>Author</author>
+    <guid>https://jhinxs.com/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
+    <description><![CDATA[Intel VT-x是Intel芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，新的环境也会引入一些新的特权指令等新的功能。在设计架构上和SVM类似，分为VMM和VMGUEST两种角色，分别处于VMX-ROOT和VMX-NO ROOT模式下
+
+对于虚拟机来说，Hypervisor是完全透明的，当Guest客户机发生vmexit事件后会陷入到Hypervisor，此时控制权完全交与Hypervisor，而Hypervisor同样可以通过vmlaunch运行虚拟机，或者在处理完vmexit事件后，通过vmresume指令，继续运行虚拟机
+VT框架实现流程 本代码用于学习研究，运行于32位操作系统之上，在代码实现VT的时候，主要是需要遵循Intel开发手册的标准，我这里实现的时候，大概是以下的流程:
+ 判断当前CPU是否支持VT技术，通过执行cpuid指令，获取返回信息并判断对应的标志位，这是硬件层面的要求 读取MSR_IA32_FEATURE_CONTROL MSR寄存器对应标志位，用于判断在BIOS配置中是否开启了VT 检查并设置CR4 VMXE标志位 分配4K对齐的内存，用于vmx操作，这块区域按照白皮书的定义一般叫做VMXON region 初始化VMXON region区域，主要是写入一个VMCS版本号，这个版本号通过读取 IA32_MSR_VMX_BASIC MSR寄存器获得 执行VMXON,并检查EFLAGE.CF位是否置0，判断是否执行成功 分配4K对齐的内存，用于逻辑处理器也即虚拟机的操作区域，叫做VMCS region 调用vmclear指令，将VMCS区域设置为清除状态，也即区域初始化 调用vmptrld指令，激活VMCS 为host以及guest分配内存空间 填充VMCS区域，这是最重要也是最复杂的一步 通过vmlaunch运行虚拟机  代码部分 这个代码写的也是一波三折，蓝屏N次，也是各种坑，虽然可以有参考代码，但实际上有很多因素，遇到比如像保存现场代码的优化，多核处理等等诸多问题
+首先是开启VT的前期，检测阶段，首先就是通过CPUID指令，这个指令执行前，需要将EAX寄存器置为1，返回值会存在ECX寄存器中，这里CPUID置1是Intel的要求，如果EAX中是其他值，返回的信息也是不同的，只是在这里用作CPU VTZ支持检测，EAX需要置1
+
+1 2 3 4 5 6 7 8 9 10 11 12  get_cpuid_info proc,_para:dword pushad mov eax,1H cpuid mov esi,_para mov [esi],ecx popad ret get_cpuid_info endp   然后是读取IA32_FEATURE_CONTROL MSR寄存器,如果在bios启用VT则bit1，bit2或者两者都必须为1，bit1和bit2主要用于设置是否处于SMX Mode（安全扩展模式）下，这里一般检测bit2就可以了
+1 2 3 4 5 6  ULONG64 msr = __readmsr(MSR_IA32_FEATURE_CONTROL); if (!]]></description>
+</item></channel>
 </rss>

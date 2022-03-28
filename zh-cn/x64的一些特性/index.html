@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>x64的一些特性 - Jhin&#39;s Story</title><meta name="Description" content="Jhinxs"><meta property="og:title" content="x64的一些特性" />
+<meta property="og:description" content="寄存器 首先是寄存器数值的宽度，除去标志寄存器和段寄存器(段寄存器长度均为96位，其中有16位的可见部分和80位的不可见部分)外，均为8个字节" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://jhinxs.com/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" /><meta property="og:image" content="https://jhinxs.com/images/jhin.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-08-21T12:37:55+08:00" />
+<meta property="article:modified_time" content="2021-08-21T12:37:55+08:00" />
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://jhinxs.com/images/jhin.png"/>
+
+<meta name="twitter:title" content="x64的一些特性"/>
+<meta name="twitter:description" content="寄存器 首先是寄存器数值的宽度，除去标志寄存器和段寄存器(段寄存器长度均为96位，其中有16位的可见部分和80位的不可见部分)外，均为8个字节"/>
+<meta name="application-name" content="Jhinxs">
+<meta name="apple-mobile-web-app-title" content="Jhinxs"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://jhinxs.com/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" /><link rel="prev" href="https://jhinxs.com/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" /><link rel="next" href="https://jhinxs.com/zh-cn/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" /><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.13.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.7.2/animate.min.css"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "x64的一些特性",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/jhinxs.com\/zh-cn\/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7\/"
+        },"image": ["https:\/\/jhinxs.com\/jhin.png"],"genre": "posts","keywords": "OS","wordcount":  3267 ,
+        "url": "https:\/\/jhinxs.com\/zh-cn\/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7\/","datePublished": "2021-08-21T12:37:55+08:00","dateModified": "2021-08-21T12:37:55+08:00","license": "Jhinxs","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/jhinxs.com\/jhin.png"},"author": {
+                "@type": "Person",
+                "name": "jhinxs"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="fixed" header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/zh-cn/" title="Jhin&#39;s Story"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw'></i></span>Jhinxs</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/zh-cn/posts/"> 所有文章 </a><a class="menu-item" href="/zh-cn/tags/"> 标签 </a><a class="menu-item" href="/zh-cn/categories/"> 分类 </a><a class="menu-item" href="/zh-cn/categories/documentation/"> 文档 </a><a class="menu-item" href="/zh-cn/about/"> 关于 </a><a class="menu-item" href="https://github.com/Jhinxs" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw'></i>  </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item language" title="选择语言">简体中文<i class="fas fa-chevron-right fa-fw"></i>
+                        <select class="language-select" id="language-select-desktop" onchange="location = this.value;"><option value="/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/">English</option><option value="/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" selected>简体中文</option></select>
+                    </a><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/zh-cn/" title="Jhin&#39;s Story"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw'></i></span>Jhinxs</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/zh-cn/posts/" title="">所有文章</a><a class="menu-item" href="/zh-cn/tags/" title="">标签</a><a class="menu-item" href="/zh-cn/categories/" title="">分类</a><a class="menu-item" href="/zh-cn/categories/documentation/" title="">文档</a><a class="menu-item" href="/zh-cn/about/" title="">关于</a><a class="menu-item" href="https://github.com/Jhinxs" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw'></i></a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a><a href="javascript:void(0);" class="menu-item" title="选择语言">简体中文<i class="fas fa-chevron-right fa-fw"></i>
+                    <select class="language-select" onchange="location = this.value;"><option value="/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/">English</option><option value="/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" selected>简体中文</option></select>
+                </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">x64的一些特性</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/zh-cn/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-category">收录于 <a href="/zh-cn/categories/windows-os/"><i class="far fa-folder fa-fw"></i>Windows OS</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2021-08-21">2021-08-21</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 3267 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 7 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#寄存器">寄存器</a></li>
+        <li><a href="#fs与gs">FS与GS</a></li>
+        <li><a href="#内存布局与内存模型">内存布局与内存模型</a></li>
+        <li><a href="#调用约定">调用约定</a>
+          <ul>
+            <li><a href="#栈帧">栈帧</a></li>
+          </ul>
+        </li>
+        <li><a href="#x64分页机制">X64分页机制</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h3 id="寄存器">寄存器</h3>
+<p>首先是寄存器数值的宽度，除去标志寄存器和段寄存器(段寄存器长度均为96位，其中有16位的可见部分和80位的不可见部分)外，均为8个字节64位宽度，在32位平台的基础上，增加了R8~R15共8个寄存器</p>
+<p><a href="/images/assets/post2/page1.PNG" rel=""><img src="/images/assets/post2/page1.PNG" width="100%"/></a></p>
+<ul>
+<li>易变寄存器:RAX,RCX,RDX,R8-R11</li>
+<li>非易变寄存器：RBP,RBX,RSI,RDI,R12-R15</li>
+</ul>
+<h3 id="fs与gs">FS与GS</h3>
+<p>32位的操作系统中，FS寄存器在3环执向TEB结构体，0环指向KPCR结构体，在X64中，则是使用GS寄存器</p>
+<p><a href="/images/assets/post2/page2.PNG" rel=""><img src="/images/assets/post2/page2.PNG" width="100%"/></a></p>
+<p>微软提供了IA32_FS_BASE(0xC0000100)和IA32_GS_BASE MSR(0xC0000101)寄存器用于获取Base,因为如果用段描述的方式去获取Base的话，在64位的段描述符中，是没法再放入64位的地址</p>
+<p><a href="/images/assets/post2/page3.PNG" rel=""><img src="/images/assets/post2/page3.PNG" width="100%"/></a></p>
+<p>FS则继续给Wow64提供服务，也就是32位的应用程序</p>
+<h3 id="内存布局与内存模型">内存布局与内存模型</h3>
+<p>x64下内存分配，理论可以使用2^64次大小的内存空间，但是实际操作系统设计时只用了其中的48位，x64采用了9-9-9-9-12分页，也就是PML4T分页，按照32位操作系统非PAE分页的套路，也即10-10-12分页，PDE-PTE-offset，总的内存1024x1024x4k=4Gb，其中用户和内核各使用了2GB,在x64下理论上支持，512x512x512x512x4k=256Tb，实际上windows支持16TB左右的空间
+其中:</p>
+<ul>
+<li>用户空间:0x00000000~00000000 &mdash; 0x000007fff~ffffffff</li>
+<li>内核空间:0xfffff800~00000000 &mdash; 0xffffffff~ffffffff</li>
+</ul>
+<p>IA-32架构下主要内存模型为:Basic Flat Module(基本的平坦模型)，Protect Flat Module(受保护的平坦模式)，Multi-Segment Module(分段内存模型)</p>
+<ul>
+<li>
+<p>Basic Flat Module(基本的平坦模型)</p>
+<p>最为简单的一种模型，操作系统和应用程序可以访问不受限制的内存空间，没有任何的分段机制，根据inter开发手册所说，一个最简单的平坦模型，至少建立两个段描述符，一个数据，一个代码，分别指向了数据段，代码段，但是都被映射到基址为0，限长为4gb的内存空间，即便访问的地址超过了实际物理内存的最大地址，也不会报错</p>
+</li>
+</ul>
+<p><a href="/images/assets/post2/page4.PNG" rel=""><img src="/images/assets/post2/page4.PNG" width="100%"/></a></p>
+<ul>
+<li>
+<p>Protect Flat Module(受保护的平坦模式)</p>
+<p>主要是在基本的平坦模型中，提供了内存访问保护，超出界限后会出发保护异常，同样有了特权级机制的段权限分配，也即用户模式和内核模式，这些段的基址都是从0开始，也就是说这些段在内存空间上来说都是重叠的，逻辑上划分为不同的用途</p>
+</li>
+</ul>
+<p><a href="/images/assets/post2/page5.PNG" rel=""><img src="/images/assets/post2/page5.PNG" width="100%"/></a></p>
+<ul>
+<li>
+<p>Multi-Segment Module(分段内存模型)</p>
+<p>相较于前两种，稍稍复杂一点，这种对于不同用途的段在内存划分上也分离开来，实现真正的内存分段，对不同段，如代码段，数据段，内存访问采用seg base+offset的形式，采用了强制的硬件级的保护机制，每个应用程序可以有自己的私有段，也可以和其他程序共享，同样的，段权限检查和访问控制机制，都可以阻止如内存越界等非法访问操作</p>
+</li>
+</ul>
+<p><a href="/images/assets/post2/page6.PNG" rel=""><img src="/images/assets/post2/page6.PNG" width="100%"/></a></p>
+<p>在x64中，根据inter开发手册:</p>
+<p><code> In 64-bit mode, segmentation is generally (but not completely) disabled, creating a flat 64-bit linear-address  space. The processor treats the segment base of CS, DS, ES, SS as zero, creating a linear address that is equal to  the effective address. The FS and GS segments are exceptions. These segment registers (which hold the segment  base) can be used as additional base registers in linear address calculations. They facilitate addressing local data  and certain operating system data structures.</code></p>
+<p>CS, DS, ES, SS的段基址全部为0,base全部为0，但是FS和GS除外，它们的base可以通过前面说过的MSR寄存器获得
+x64中，中断描述符和TSS段描述符均变为了128位，代码段和数据段描述符依然是64位</p>
+<h3 id="调用约定">调用约定</h3>
+<p>X64的调用约定使用4寄存器的fast-call约定，整数参数在寄存器RCX,RDX,R8,R9,尽管使用了寄存器传参，但是系统还是会分配堆栈空间，而且堆栈平衡是由调用者完成</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++"><span class="n">VOID</span> <span class="nf">x64_go</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">,</span> <span class="kt">int</span> <span class="n">c</span><span class="p">,</span> <span class="kt">int</span> <span class="n">d</span><span class="p">)</span> 
+<span class="p">{</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">&#34;a:%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">a</span><span class="p">);</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">&#34;b:%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">&#34;c:%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">c</span><span class="p">);</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">&#34;d:%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">d</span><span class="p">);</span>
+
+<span class="p">}</span>
+
+
+<span class="n">VOID</span> <span class="nf">main</span><span class="p">()</span> 
+<span class="p">{</span>
+	
+	<span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="n">d</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+	<span class="n">x64_go</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">);</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">&#34;over</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+	<span class="n">system</span><span class="p">(</span><span class="s">&#34;pause&#34;</span><span class="p">);</span>
+  
+<span class="p">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>这段测试代码中，调用函数时所对应的汇编是这样的</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm"><span class="nf">mov</span>         <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">a</span><span class="p">],</span><span class="mi">1</span>  
+
+<span class="no">mov</span>         <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">b</span><span class="p">],</span><span class="mi">2</span>  
+
+<span class="no">mov</span>         <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">c</span><span class="p">],</span><span class="mi">3</span>  
+
+<span class="no">mov</span>         <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">d</span><span class="p">],</span><span class="mi">4</span>  
+
+<span class="no">mov</span>         <span class="no">r9d</span><span class="p">,</span><span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">d</span><span class="p">]</span>  
+<span class="no">mov</span>         <span class="no">r8d</span><span class="p">,</span><span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">c</span><span class="p">]</span>  
+<span class="no">mov</span>         <span class="no">edx</span><span class="p">,</span><span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">b</span><span class="p">]</span>  
+<span class="no">mov</span>         <span class="no">ecx</span><span class="p">,</span><span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">a</span><span class="p">]</span>  
+<span class="no">call</span>        <span class="no">x64_go</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>可以看到当我们的参数长度不超过4个字节的时候，分别使用32位的寄存器进行传参，这个是编译器做的处理，长度足够存储数据的情况下，优先使用32位寄存器，因为操作64位寄存器(如MOV指令)的指令占4个字节，多一个48前缀指令，说明操作数是64位的，而32位寄存器只需要3个字节的指令长度</p>
+<p>然后是堆栈分配的问题，调用者在调用子函数之前，根据函数参数的总长度，分配堆栈空间，这个堆栈空间至少要能容纳Regs*8，也就是所需保存的寄存器的总长度，如果有局部变量，则需要额外分配，并且要确保，在进入函数的时候，RSP要0x10对齐，这个堆栈空间用来进入子函数后，保存这些寄存器，以免后续可能会用到这些寄存器，从而改变导致后续出现异常</p>
+<p>如果我想调用一个4个参数的函数，大概应该就是这样</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++">  <span class="n">VOID</span> <span class="nf">x64_go2</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">,</span> <span class="kt">int</span> <span class="n">c</span><span class="p">,</span> <span class="kt">int</span> <span class="n">d</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&#34;a:%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">a</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&#34;b:%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&#34;c:%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">c</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&#34;d:%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">d</span><span class="p">);</span>
+
+
+  <span class="p">}</span>
+
+  <span class="n">test1</span> <span class="n">proc</span>
+
+      <span class="n">mov</span> <span class="n">rcx</span><span class="p">,</span><span class="mi">1</span>
+      <span class="n">mov</span> <span class="n">rdx</span><span class="p">,</span><span class="mi">2</span>
+      <span class="n">mov</span> <span class="n">r8</span><span class="p">,</span><span class="mi">3</span>
+      <span class="n">mov</span> <span class="n">r9</span><span class="p">,</span><span class="mi">4</span>
+      <span class="n">sub</span> <span class="n">rsp</span><span class="p">,</span><span class="mi">30</span><span class="n">h</span>
+      <span class="n">call</span> <span class="n">x64_go2</span>
+      <span class="n">add</span> <span class="n">rsp</span><span class="p">,</span><span class="mi">30</span><span class="n">h</span>
+      <span class="n">ret</span>
+
+  <span class="n">test1</span> <span class="n">endp</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="栈帧">栈帧</h4>
+<p>x86函数下，一般以标志性的 push ebp,mov ebp,esp,sub esp,xxxx 三连起始,其中通过ebp被叫为帧指针，esp为栈指针，前者对应栈底，后者对应栈顶，而一般进行如局部变量访问，参数访问等，都是通过ebp来找的，例如一般情况下ebp+4是返回地址，ebp+8是第一个参数，函数堆栈图大概如下这样，从上到下地址逐渐减小</p>
+<p><a href="/images/assets/post2/page7.PNG" rel=""><img src="/images/assets/post2/page7.PNG" width="60%"/></a></p>
+<p>x64下使用RSP即为栈指针也为帧指针，所有的操作以RSP为基准进行，类似pop和push等可以更改RSP的操作，一般都在函数开始和尾部进行，RSP在同一个函数体内，保持不变</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++">  <span class="n">VOID</span> <span class="nf">x64_go</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">,</span> <span class="kt">int</span> <span class="n">c</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&#34;a:%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">a</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&#34;b:%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&#34;c:%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">c</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="n">VOID</span> <span class="nf">main</span><span class="p">()</span>
+  <span class="p">{</span>
+
+    <span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+    <span class="n">x64_go</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">);</span>
+  <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>上面的代码，对应如下的一个过程:</p>
+<p><a href="/images/assets/post2/page8.PNG" rel=""><img src="/images/assets/post2/page8.PNG" width="70%"/></a></p>
+<p>至于堆栈布局，其实和x86的是类似的</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++">	<span class="n">VOID</span> <span class="nf">x64_go</span><span class="p">(</span><span class="n">ULONG64</span> <span class="n">a</span><span class="p">,</span> <span class="n">ULONG64</span> <span class="n">b</span><span class="p">,</span> <span class="n">ULONG64</span> <span class="n">c</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">111</span><span class="p">;</span>
+		<span class="n">printf</span><span class="p">(</span><span class="s">&#34;a:%llx</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">a</span><span class="p">);</span>
+		<span class="n">printf</span><span class="p">(</span><span class="s">&#34;b:%llx</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+		<span class="n">printf</span><span class="p">(</span><span class="s">&#34;c:%llx</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">c</span><span class="p">);</span>
+
+
+
+	<span class="p">}</span>
+	<span class="n">VOID</span> <span class="nf">main</span><span class="p">()</span>
+	<span class="p">{</span>
+		<span class="n">ULONG64</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+		<span class="n">ULONG64</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+		<span class="n">ULONG64</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>		
+		<span class="n">ULONG64</span> <span class="n">d</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+		<span class="n">x64_go</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">);</span>
+		<span class="n">system</span><span class="p">(</span><span class="s">&#34;pause&#34;</span><span class="p">);</span>
+
+	<span class="p">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>把核心的汇编代码抠出来，用来做堆栈结构图</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm">  <span class="nf">sub</span>     <span class="no">rsp</span><span class="p">,</span> <span class="mi">48</span><span class="no">h</span>
+  <span class="nf">mov</span>     <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">30</span><span class="no">h</span><span class="p">],</span> <span class="mi">1</span>
+  <span class="nf">mov</span>     <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">28</span><span class="no">h</span><span class="p">],</span> <span class="mi">2</span>
+  <span class="nf">mov</span>     <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">20</span><span class="no">h</span><span class="p">],</span> <span class="mi">3</span>
+  <span class="nf">mov</span>     <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">38</span><span class="no">h</span><span class="p">],</span> <span class="mi">4</span>
+  <span class="nf">mov</span>     <span class="no">r8d</span><span class="p">,</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">20</span><span class="no">h</span><span class="p">]</span>
+  <span class="nf">mov</span>     <span class="no">rdx</span><span class="p">,</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">28</span><span class="no">h</span><span class="p">]</span>
+  <span class="nf">mov</span>     <span class="no">rcx</span><span class="p">,</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">30</span><span class="no">h</span><span class="p">]</span>
+  <span class="nf">call</span>    <span class="no">x64_go</span>
+  <span class="nf">lea</span>     <span class="no">rcx</span><span class="p">,</span> <span class="no">Command</span>    <span class="c">; &#34;pause&#34;
+</span><span class="c"></span>  <span class="no">call</span>    <span class="no">cs</span><span class="p">:</span><span class="no">system</span>
+  <span class="nf">xor</span>     <span class="no">eax</span><span class="p">,</span> <span class="no">eax</span>
+  <span class="nf">add</span>     <span class="no">rsp</span><span class="p">,</span> <span class="mi">48</span><span class="no">h</span>
+  <span class="nf">retn</span>
+
+<span class="nl">x64_go:</span>
+
+  <span class="nf">mov</span>     <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">18</span><span class="no">h</span><span class="p">],</span> <span class="no">r8</span>
+  <span class="nf">mov</span>     <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">10</span><span class="no">h</span><span class="p">],</span> <span class="no">rdx</span>
+  <span class="nf">mov</span>     <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">8</span><span class="no">h</span><span class="p">],</span> <span class="no">rcx</span>
+  <span class="nf">sub</span>     <span class="no">rsp</span><span class="p">,</span> <span class="mi">38</span><span class="no">h</span>
+  <span class="nf">mov</span>     <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">20</span><span class="no">h</span><span class="p">],</span> <span class="mi">6</span><span class="no">Fh</span> <span class="c">; &#39;o&#39;
+</span><span class="c"></span>  <span class="no">mov</span>     <span class="no">rdx</span><span class="p">,</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">40</span><span class="no">h</span><span class="p">]</span>
+  <span class="nf">lea</span>     <span class="no">rcx</span><span class="p">,</span> <span class="no">aAD</span>        <span class="c">; &#34;a:%d\n&#34;
+</span><span class="c"></span>  <span class="no">call</span>    <span class="no">sub_1400010B0</span>
+  <span class="nf">mov</span>     <span class="no">rdx</span><span class="p">,</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">48</span><span class="no">h</span><span class="p">]</span>
+  <span class="nf">lea</span>     <span class="no">rcx</span><span class="p">,</span> <span class="no">aBD</span>        <span class="c">; &#34;b:%d\n&#34;
+</span><span class="c"></span>  <span class="no">call</span>    <span class="no">sub_1400010B0</span>
+  <span class="nf">mov</span>     <span class="no">rdx</span><span class="p">,</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">50</span><span class="no">h</span><span class="p">]</span>
+  <span class="nf">lea</span>     <span class="no">rcx</span><span class="p">,</span> <span class="no">aCD</span>        <span class="c">; &#34;c:%d\n&#34;
+</span><span class="c"></span>  <span class="no">call</span>    <span class="no">sub_1400010B0</span>
+  <span class="nf">add</span>     <span class="no">rsp</span><span class="p">,</span> <span class="mi">38</span><span class="no">h</span>
+  <span class="nf">retn</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>堆栈结构如下:</p>
+<p><a href="/images/assets/post2/page9.PNG" rel=""><img src="/images/assets/post2/page9.PNG" width="60%"/></a></p>
+<h3 id="x64分页机制">X64分页机制</h3>
+<p>x64分页和32位系统下的PAE分页分页是相似的，在原有的3级页映射的基础上，多了PML4T(4级页映射表)，因为x64使用了48位的虚拟地址，根据地址转换过程中虚拟地址的对应关系，也叫做9-9-9-9-12分页</p>
+<p><a href="/images/assets/post2/page10.PNG" rel=""><img src="/images/assets/post2/page10.PNG" width="100%"/></a></p>
+<p>以虚拟地址0x13fb7ff98为例，此处存了一个自定义字符串,因为实际使用了48位虚拟地址，所以最终拆分的地址为0x00013fb7ff98</p>
+<p><a href="/images/assets/post2/page11.PNG" rel=""><img src="/images/assets/post2/page11.PNG" width="100%"/></a></p>
+<p>拆分后得到9-9-9-9-12结构为</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-h" data-lang="h"><span class="mo">0000</span> <span class="mo">0000</span> <span class="mi">0</span>   <span class="mi">0</span>
+<span class="mo">0000</span> <span class="mo">0010</span> <span class="mi">0</span>   <span class="mh">0x4</span>
+<span class="mi">1111</span> <span class="mi">1110</span> <span class="mi">1</span>   <span class="mh">0x1fd</span> 
+<span class="mi">1011</span> <span class="mi">1111</span> <span class="mi">1</span>   <span class="mh">0x17f</span>
+<span class="mi">1111</span> <span class="mi">1001</span> <span class="mi">1000</span>  <span class="mh">0xf98</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>在手动查找物理地址时，要注意高于48位以及低12位清0，这些是属性和保留位，只有中间的部分12-48位为PFN页帧，除了最后的12位页面偏移，其他的都要乘以8，因为每个PDE，PTE等页目录项都是8个字节为单位</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-h" data-lang="h"><span class="mi">0</span><span class="o">:</span> <span class="n">kd</span><span class="o">&gt;</span> <span class="o">!</span><span class="n">dq</span> <span class="mf">130f</span><span class="n">d1000</span>
+<span class="cp">#130fd1000 03000001`26616867 00000000`00000000
+</span><span class="cp">#130fd1010 00000000`00000000 00000000`00000000
+</span><span class="cp">#130fd1020 00000000`00000000 00000000`00000000
+</span><span class="cp">#130fd1030 00000000`00000000 00000000`00000000
+</span><span class="cp">#130fd1040 00000000`00000000 00000000`00000000
+</span><span class="cp">#130fd1050 00000000`00000000 00000000`00000000
+</span><span class="cp">#130fd1060 00000000`00000000 00000000`00000000
+</span><span class="cp">#130fd1070 00000000`00000000 00800001`2f312867
+</span><span class="cp"></span><span class="mi">0</span><span class="o">:</span> <span class="n">kd</span><span class="o">&gt;</span> <span class="o">!</span><span class="n">dq</span> <span class="mo">00000001</span><span class="err">`</span><span class="mi">26616000</span><span class="o">+</span><span class="mh">0x4</span><span class="o">*</span><span class="mi">8</span>
+<span class="cp">#126616020 03100001`24a17867 00000000`00000000
+</span><span class="cp">#126616030 00000000`00000000 00000000`00000000
+</span><span class="cp">#126616040 00000000`00000000 00000000`00000000
+</span><span class="cp">#126616050 00000000`00000000 00000000`00000000
+</span><span class="cp">#126616060 00000000`00000000 00000000`00000000
+</span><span class="cp">#126616070 00000000`00000000 00000000`00000000
+</span><span class="cp">#126616080 00000000`00000000 00000000`00000000
+</span><span class="cp">#126616090 00000000`00000000 00000000`00000000
+</span><span class="cp"></span><span class="mi">0</span><span class="o">:</span> <span class="n">kd</span><span class="o">&gt;</span> <span class="o">!</span><span class="n">dq</span> <span class="mo">00000001</span><span class="err">`</span><span class="mi">24</span><span class="n">a17000</span><span class="o">+</span><span class="mh">0x1fd</span><span class="o">*</span><span class="mi">8</span>
+<span class="cp">#124a17fe8 05200001`24818867 00000000`00000000
+</span><span class="cp">#124a17ff8 00000000`00000000 006f004c`00740076
+</span><span class="cp">#124a18008 00650052`002e0067 00720075`006f0073
+</span><span class="cp">#124a18018 00220073`00650063 00720065`00760020
+</span><span class="cp">#124a18028 006e006f`00690073 002e0036`0022003d
+</span><span class="cp">#124a18038 00360037`002e0031 0032002e`00310030
+</span><span class="cp">#124a18048 00320037`00300033 00720070`00200022
+</span><span class="cp">#124a18058 00730065`0063006f 00410072`006f0073
+</span><span class="cp"></span><span class="mi">0</span><span class="o">:</span> <span class="n">kd</span><span class="o">&gt;</span> <span class="o">!</span><span class="n">dq</span> <span class="mo">00000001</span><span class="err">`</span><span class="mi">24818000</span><span class="o">+</span><span class="mh">0x17f</span><span class="o">*</span><span class="mi">8</span>
+<span class="cp">#124818bf8 9e100000`bdfba005 b2300000`71cf0005
+</span><span class="cp">#124818c08 b2400000`73af1005 95600001`2e45d005
+</span><span class="cp">#124818c18 a0000001`308d6005 b2500000`71df2005
+</span><span class="cp">#124818c28 b2600001`064f3005 b2700000`734f4005
+</span><span class="cp">#124818c38 b2800001`2f2f5005 b2900000`70bf6005
+</span><span class="cp">#124818c48 b2a00000`b8ff7005 b2b00000`b9ff8005
+</span><span class="cp">#124818c58 b2c00001`227f9005 b2d00001`2defa005
+</span><span class="cp">#124818c68 b2e00001`2cefb005 b2f00000`ba5fc005
+</span><span class="cp"></span><span class="mi">0</span><span class="o">:</span> <span class="n">kd</span><span class="o">&gt;</span> <span class="o">!</span><span class="n">dq</span> <span class="mo">00000000</span><span class="err">`</span><span class="n">bdfba000</span><span class="o">+</span><span class="mh">0xf98</span>
+<span class="cp">#bdfbaf98 21747365`74343678 00000000`00002121
+</span><span class="cp">#bdfbafa8 786c6c25`000a7325 73756170`0000000a
+</span><span class="cp">#bdfbafb8 00000000`00000065 00000001`3fb800a0
+</span><span class="cp">#bdfbafc8 00000001`3fb801b0 00000001`3fb80308
+</span><span class="cp">#bdfbafd8 00000001`3fb80330 00000001`3fb80370
+</span><span class="cp">#bdfbafe8 00000001`3fb803a8 00000000`00000001
+</span><span class="cp">#bdfbaff8 00000001`00000001 00000000`00000000
+</span><span class="cp">#bdfbb008 00000000`00000000 00000000`00000000
+</span><span class="cp"></span><span class="mi">0</span><span class="o">:</span> <span class="n">kd</span><span class="o">&gt;</span> <span class="o">!</span><span class="n">db</span> <span class="mo">00000000</span><span class="err">`</span><span class="n">bdfba000</span><span class="o">+</span><span class="mh">0xf98</span>
+<span class="cp">#bdfbaf98 78 36 34 74 65 73 74 21-21 21 00 00 00 00 00 00 x64test!!!......
+</span><span class="cp">#bdfbafa8 25 73 0a 00 25 6c 6c 78-0a 00 00 00 70 61 75 73 %s..%llx....paus
+</span><span class="cp">#bdfbafb8 65 00 00 00 00 00 00 00-a0 00 b8 3f 01 00 00 00 e..........?....
+</span><span class="cp">#bdfbafc8 b0 01 b8 3f 01 00 00 00-08 03 b8 3f 01 00 00 00 ...?.......?....
+</span><span class="cp">#bdfbafd8 30 03 b8 3f 01 00 00 00-70 03 b8 3f 01 00 00 00 0..?....p..?....
+</span><span class="cp">#bdfbafe8 a8 03 b8 3f 01 00 00 00-01 00 00 00 00 00 00 00 ...?............
+</span><span class="cp">#bdfbaff8 01 00 00 00 01 00 00 00-00 00 00 00 00 00 00 00 ................
+</span><span class="cp">#bdfbb008 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00 ................
+</span><span class="cp"></span><span class="mi">0</span><span class="o">:</span> <span class="n">kd</span><span class="o">&gt;</span> <span class="o">!</span><span class="n">vtop</span> <span class="mf">130f</span><span class="n">d1000</span> <span class="mh">0x13fb7ff98</span>
+<span class="nl">Amd64VtoP</span><span class="p">:</span> <span class="n">Virt</span> <span class="mf">000000013f</span><span class="n">b7ff98</span><span class="p">,</span> <span class="n">pagedir</span> <span class="mf">0000000130f</span><span class="n">d1000</span>
+<span class="nl">Amd64VtoP</span><span class="p">:</span> <span class="n">PML4E</span> <span class="mf">0000000130f</span><span class="n">d1000</span>
+<span class="nl">Amd64VtoP</span><span class="p">:</span> <span class="n">PDPE</span> <span class="mo">0000000126616020</span>
+<span class="nl">Amd64VtoP</span><span class="p">:</span> <span class="n">PDE</span> <span class="mo">0000000124</span><span class="n">a17fe8</span>
+<span class="nl">Amd64VtoP</span><span class="p">:</span> <span class="n">PTE</span> <span class="mo">0000000124</span><span class="mi">818</span><span class="n">bf8</span>
+<span class="nl">Amd64VtoP</span><span class="p">:</span> <span class="n">Mapped</span> <span class="n">phys</span> <span class="mo">00000000</span><span class="n">bdfbaf98</span>
+<span class="n">Virtual</span> <span class="n">address</span> <span class="mf">13f</span><span class="n">b7ff98</span> <span class="n">translates</span> <span class="n">to</span> <span class="n">physical</span> <span class="n">address</span> <span class="n">bdfbaf98</span><span class="p">.</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>Enjoy, Good Luck</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2021-08-21</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://jhinxs.com/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" data-title="x64的一些特性" data-via="realDonaldTrump" data-hashtags="OS"><i class="fab fa-twitter fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://jhinxs.com/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" data-hashtag="OS"><i class="fab fa-facebook-square fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Hacker News" data-sharer="hackernews" data-url="https://jhinxs.com/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" data-title="x64的一些特性"><i class="fab fa-hacker-news fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Line" data-sharer="line" data-url="https://jhinxs.com/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" data-title="x64的一些特性"><i data-svg-src="https://cdn.jsdelivr.net/npm/simple-icons@2.14.0/icons/line.svg"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://jhinxs.com/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" data-title="x64的一些特性"><i class="fab fa-weibo fa-fw"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/zh-cn/tags/os/">OS</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/zh-cn/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" class="prev" rel="prev" title="Intel VT-x mini VT 框架的实现"><i class="fas fa-angle-left fa-fw"></i>Intel VT-x mini VT 框架的实现</a>
+            <a href="/zh-cn/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" class="next" rel="next" title="Intel VT x64 EPT Hook框架的实现">Intel VT x64 EPT Hook框架的实现<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+</article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021 - 2022</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/zh-cn/" target="_blank">jhinxs</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">Jhinxs Story</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/smooth-scroll@16.1.3/dist/smooth-scroll.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.37.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.8/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.2.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.4.0/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":10},"comment":{},"search":{"highlightTag":"em","lunrIndexURL":"/zh-cn/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":50,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

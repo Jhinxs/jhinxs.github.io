@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>Intel VT-x mini VT 框架的实现 - Jhin&#39;s Story</title><meta name="Description" content="Jhinxs"><meta property="og:title" content="Intel VT-x mini VT 框架的实现" />
+<meta property="og:description" content="Intel VT-x是Intel芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://jhinxs.com/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" /><meta property="og:image" content="https://jhinxs.com/images/jhin.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-06-02T12:37:55+08:00" />
+<meta property="article:modified_time" content="2021-06-02T12:37:55+08:00" />
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://jhinxs.com/images/jhin.png"/>
+
+<meta name="twitter:title" content="Intel VT-x mini VT 框架的实现"/>
+<meta name="twitter:description" content="Intel VT-x是Intel芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于"/>
+<meta name="application-name" content="Jhinxs">
+<meta name="apple-mobile-web-app-title" content="Jhinxs"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://jhinxs.com/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" /><link rel="next" href="https://jhinxs.com/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" /><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.13.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.7.2/animate.min.css"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Intel VT-x mini VT 框架的实现",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/jhinxs.com\/zh-cn\/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0\/"
+        },"image": ["https:\/\/jhinxs.com\/jhin.png"],"genre": "posts","keywords": "Kernel, VT","wordcount":  5356 ,
+        "url": "https:\/\/jhinxs.com\/zh-cn\/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0\/","datePublished": "2021-06-02T12:37:55+08:00","dateModified": "2021-06-02T12:37:55+08:00","license": "Jhinxs","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/jhinxs.com\/jhin.png"},"author": {
+                "@type": "Person",
+                "name": "jhinxs"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="fixed" header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/zh-cn/" title="Jhin&#39;s Story"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw'></i></span>Jhinxs</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/zh-cn/posts/"> 所有文章 </a><a class="menu-item" href="/zh-cn/tags/"> 标签 </a><a class="menu-item" href="/zh-cn/categories/"> 分类 </a><a class="menu-item" href="/zh-cn/categories/documentation/"> 文档 </a><a class="menu-item" href="/zh-cn/about/"> 关于 </a><a class="menu-item" href="https://github.com/Jhinxs" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw'></i>  </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item language" title="选择语言">简体中文<i class="fas fa-chevron-right fa-fw"></i>
+                        <select class="language-select" id="language-select-desktop" onchange="location = this.value;"><option value="/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">English</option><option value="/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" selected>简体中文</option></select>
+                    </a><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/zh-cn/" title="Jhin&#39;s Story"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw'></i></span>Jhinxs</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/zh-cn/posts/" title="">所有文章</a><a class="menu-item" href="/zh-cn/tags/" title="">标签</a><a class="menu-item" href="/zh-cn/categories/" title="">分类</a><a class="menu-item" href="/zh-cn/categories/documentation/" title="">文档</a><a class="menu-item" href="/zh-cn/about/" title="">关于</a><a class="menu-item" href="https://github.com/Jhinxs" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw'></i></a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a><a href="javascript:void(0);" class="menu-item" title="选择语言">简体中文<i class="fas fa-chevron-right fa-fw"></i>
+                    <select class="language-select" onchange="location = this.value;"><option value="/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">English</option><option value="/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" selected>简体中文</option></select>
+                </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">Intel VT-x mini VT 框架的实现</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/zh-cn/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-category">收录于 <a href="/zh-cn/categories/windows-kernel/"><i class="far fa-folder fa-fw"></i>Windows Kernel</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2021-06-02">2021-06-02</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 5356 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 11 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#vt框架实现流程">VT框架实现流程</a></li>
+        <li><a href="#代码部分">代码部分</a></li>
+        <li><a href="#扩展">扩展</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p>  Intel VT-x是Intel芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，新的环境也会引入一些新的特权指令等新的功能。在设计架构上和SVM类似，分为VMM和VMGUEST两种角色，分别处于VMX-ROOT和VMX-NO ROOT模式下</p>
+<p><a href="/images/assets/post1/page1.PNG" rel=""><img src="/images/assets/post1/page1.PNG" width="100%"/></a></p>
+<p>对于虚拟机来说，Hypervisor是完全透明的，当Guest客户机发生vmexit事件后会陷入到Hypervisor，此时控制权完全交与Hypervisor，而Hypervisor同样可以通过vmlaunch运行虚拟机，或者在处理完vmexit事件后，通过vmresume指令，继续运行虚拟机</p>
+<h3 id="vt框架实现流程">VT框架实现流程</h3>
+<p>本代码用于学习研究，运行于32位操作系统之上，在代码实现VT的时候，主要是需要遵循Intel开发手册的标准，我这里实现的时候，大概是以下的流程:</p>
+<ul>
+<li>判断当前CPU是否支持VT技术，通过执行cpuid指令，获取返回信息并判断对应的标志位，这是硬件层面的要求</li>
+<li>读取MSR_IA32_FEATURE_CONTROL MSR寄存器对应标志位，用于判断在BIOS配置中是否开启了VT</li>
+<li>检查并设置CR4 VMXE标志位</li>
+<li>分配4K对齐的内存，用于vmx操作，这块区域按照白皮书的定义一般叫做VMXON region</li>
+<li>初始化VMXON region区域，主要是写入一个VMCS版本号，这个版本号通过读取 IA32_MSR_VMX_BASIC MSR寄存器获得</li>
+<li>执行VMXON,并检查EFLAGE.CF位是否置0，判断是否执行成功</li>
+<li>分配4K对齐的内存，用于逻辑处理器也即虚拟机的操作区域，叫做VMCS region</li>
+<li>调用vmclear指令，将VMCS区域设置为清除状态，也即区域初始化</li>
+<li>调用vmptrld指令，激活VMCS</li>
+<li>为host以及guest分配内存空间</li>
+<li>填充VMCS区域，这是最重要也是最复杂的一步</li>
+<li>通过vmlaunch运行虚拟机</li>
+</ul>
+<h3 id="代码部分">代码部分</h3>
+<p>这个代码写的也是一波三折，蓝屏N次，也是各种坑，虽然可以有参考代码，但实际上有很多因素，遇到比如像保存现场代码的优化，多核处理等等诸多问题</p>
+<p>首先是开启VT的前期，检测阶段，首先就是通过CPUID指令，这个指令执行前，需要将EAX寄存器置为1，返回值会存在ECX寄存器中，这里CPUID置1是Intel的要求，如果EAX中是其他值，返回的信息也是不同的，只是在这里用作CPU VTZ支持检测，EAX需要置1</p>
+<p><a href="/images/assets/post1/page2.PNG" rel=""><img src="/images/assets/post1/page2.PNG" width="100%"/></a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm"><span class="nf">get_cpuid_info</span> <span class="no">proc</span><span class="p">,</span><span class="no">_para</span><span class="p">:</span><span class="no">dword</span>
+       
+        <span class="nf">pushad</span>
+        <span class="nf">mov</span> <span class="no">eax</span><span class="p">,</span><span class="mi">1</span><span class="no">H</span>
+        <span class="nf">cpuid</span>
+        <span class="nf">mov</span> <span class="no">esi</span><span class="p">,</span><span class="no">_para</span>
+        <span class="nf">mov</span> <span class="p">[</span><span class="no">esi</span><span class="p">],</span><span class="no">ecx</span>
+        <span class="nf">popad</span>
+        <span class="nf">ret</span>
+
+<span class="nf">get_cpuid_info</span> <span class="no">endp</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>然后是读取IA32_FEATURE_CONTROL MSR寄存器,如果在bios启用VT则bit1，bit2或者两者都必须为1，bit1和bit2主要用于设置是否处于SMX Mode（安全扩展模式）下，这里一般检测bit2就可以了</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++">    <span class="n">ULONG64</span> <span class="n">msr</span> <span class="o">=</span>  <span class="n">__readmsr</span><span class="p">(</span><span class="n">MSR_IA32_FEATURE_CONTROL</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">msr</span> <span class="o">&amp;</span> <span class="mi">4</span><span class="p">))</span>                                              <span class="c1">//4.VT 指令是否被锁定
+</span><span class="c1"></span>    <span class="p">{</span>
+        <span class="n">DbgPrint</span><span class="p">(</span><span class="s">&#34;MSR_IA32_FEATURE_CONTROL VMXON Locked </span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="n">STATUS_UNSUCCESSFUL</span><span class="p">;</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>检测并设置CR4.VMXE也就是bit13位，在VMXON和VMXOFF之间不许再修改此位</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++">    <span class="n">set_cr4</span><span class="p">(</span><span class="n">X86_CR4_VMXE</span><span class="p">);</span>                                 <span class="c1">//3.设置CR4.VMXE
+</span><span class="c1"></span>    <span class="n">cr4</span> <span class="o">=</span> <span class="n">get_cr4</span><span class="p">();</span> 
+    <span class="k">if</span> <span class="p">((</span><span class="n">cr4</span> <span class="o">&amp;</span> <span class="n">X86_CR4_VMXE</span><span class="p">)</span> <span class="o">!=</span> <span class="n">X86_CR4_VMXE</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">DbgPrint</span><span class="p">(</span><span class="s">&#34;CR4_VMXE set Error </span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="n">STATUS_UNSUCCESSFUL</span><span class="p">;</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>分配VMXON Region区域，读取MSR寄存器，获取VMCS标识并用其初始化VMXON Region，白皮书中说设置前31位，这里需要注意分配非分页内存，然后就可以通过VMXON进入虚拟机模式了，这里首先要获取VMXON Region区域的物理地址，作为参数传递给VMXON，执行完VMXON后需要验证Eflags寄存器的CF位和ZF是否为0，0表示开启成功(参考 Intel-64-ia-32&ndash;system-programming-manual-vol-3 Chapter 24.1)</p>
+<p><a href="/images/assets/post1/page3.PNG" rel=""><img src="/images/assets/post1/page3.PNG" width="100%"/></a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm"><span class="nf">vmx_on</span> <span class="no">proc</span><span class="p">,</span><span class="no">LowPart</span><span class="p">:</span><span class="no">dword</span><span class="p">,</span><span class="no">HighPart</span><span class="p">:</span><span class="no">dword</span>
+
+        <span class="nf">push</span> <span class="no">HighPart</span>
+        <span class="nf">push</span> <span class="no">LowPart</span>
+        <span class="nf">vmxon</span> <span class="no">qword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">esp</span><span class="p">]</span>
+        <span class="nf">add</span> <span class="no">esp</span><span class="p">,</span><span class="mi">8</span>
+        <span class="nf">ret</span>
+
+<span class="nf">vmx_on</span> <span class="no">endp</span>
+</code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++">    <span class="n">vmx_basic_msr</span> <span class="o">=</span> <span class="n">__readmsr</span><span class="p">(</span><span class="n">MSR_IA32_VMX_BASIC</span><span class="p">);</span>                 <span class="c1">//获取vmcs identifier
+</span><span class="c1"></span>    <span class="n">VMX_Region</span> <span class="o">=</span> <span class="n">ExAllocatePoolWithTag</span><span class="p">(</span><span class="n">NonPagedPool</span><span class="p">,</span> <span class="mi">4096</span><span class="p">,</span> <span class="err">&#39;</span><span class="n">vmx</span><span class="err">&#39;</span><span class="p">);</span>            
+    <span class="n">RtlZeroMemory</span><span class="p">(</span><span class="n">VMX_Region</span><span class="p">,</span> <span class="mi">4096</span><span class="p">);</span>
+    <span class="o">*</span><span class="p">(</span><span class="n">ULONG</span><span class="o">*</span><span class="p">)</span><span class="n">VMX_Region</span> <span class="o">=</span> <span class="p">(</span><span class="n">vmx_basic_msr</span> <span class="o">&amp;</span> <span class="mh">0x7ffffff</span><span class="p">);</span>
+    <span class="n">VMXONRegion_PA</span> <span class="o">=</span> <span class="n">MmGetPhysicalAddress</span><span class="p">(</span><span class="n">VMX_Region</span><span class="p">);</span>
+    <span class="n">vmx_on</span><span class="p">(</span><span class="n">VMXONRegion_PA</span><span class="p">.</span><span class="n">LowPart</span><span class="p">,</span><span class="n">VMXONRegion_PA</span><span class="p">.</span><span class="n">HighPart</span><span class="p">);</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>前期检测的过程基本完了，接下来就是分配内存了，首先是分配VMCS Region,这块区域是最核心的，可以看为是虚拟化逻辑处理器做各种操作所需要的内存空间，VMCS Region中存在各种域，是需要手动指定填充的，同样需要为Host分配一块内存，用于guest发生vmexit回到host所需要的内存空间，同样分配内存4k对齐以及非分页，在驱动卸载时要释放这几块内存区域，在VMCS Region分配完后，需要调用vmclear以及vmptrld指令，用于初始化和激活VMCS Region</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++">    <span class="n">VMXCS_Region</span> <span class="o">=</span> <span class="n">ExAllocatePoolWithTag</span><span class="p">(</span><span class="n">NonPagedPool</span><span class="p">,</span> <span class="mi">4096</span><span class="p">,</span><span class="err">&#39;</span><span class="n">vmcs</span><span class="err">&#39;</span><span class="p">);</span>            
+    <span class="n">DbgPrint</span><span class="p">(</span><span class="s">&#34;VMXCS_Region: %x</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">VMXCS_Region</span><span class="p">);</span>
+    <span class="n">RtlZeroMemory</span><span class="p">(</span><span class="n">VMXCS_Region</span><span class="p">,</span> <span class="mi">4096</span><span class="p">);</span>
+
+    <span class="n">vmx_basic_msr</span> <span class="o">=</span> <span class="n">__readmsr</span><span class="p">(</span><span class="n">MSR_IA32_VMX_BASIC</span><span class="p">);</span>
+    <span class="o">*</span><span class="p">(</span><span class="n">ULONG</span><span class="o">*</span><span class="p">)</span><span class="n">VMXCS_Region</span> <span class="o">=</span> <span class="p">(</span><span class="n">vmx_basic_msr</span> <span class="o">&amp;</span> <span class="mh">0x7ffffff</span><span class="p">);</span>
+    <span class="n">VMCSRegion_PA</span> <span class="o">=</span> <span class="n">MmGetPhysicalAddress</span><span class="p">(</span><span class="n">VMXCS_Region</span><span class="p">);</span>
+
+    <span class="n">vmxcs_clear</span><span class="p">(</span><span class="n">VMCSRegion_PA</span><span class="p">.</span><span class="n">LowPart</span><span class="p">,</span> <span class="n">VMCSRegion_PA</span><span class="p">.</span><span class="n">HighPart</span><span class="err">）</span><span class="p">;</span>    
+
+    <span class="n">eflags</span> <span class="o">=</span> <span class="n">__readeflags</span><span class="p">();</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">eflags</span> <span class="o">&amp;</span> <span class="mh">0x41</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">DbgPrint</span><span class="p">(</span><span class="s">&#34;vmxcs_clear ERROR</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+        <span class="n">ExFreePoolWithTag</span><span class="p">(</span><span class="n">VMX_Region</span><span class="p">,</span> <span class="err">&#39;</span><span class="n">vmx</span><span class="err">&#39;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="n">STATUS_UNSUCCESSFUL</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">vmx_vmptrld</span><span class="p">(</span><span class="n">VMCSRegion_PA</span><span class="p">.</span><span class="n">LowPart</span><span class="p">,</span> <span class="n">VMCSRegion_PA</span><span class="p">.</span><span class="n">HighPart</span><span class="p">);</span>  
+
+    <span class="n">vmhost_Stack</span> <span class="o">=</span> <span class="n">ExAllocatePoolWithTag</span><span class="p">(</span><span class="n">NonPagedPool</span><span class="p">,</span> <span class="mi">4096</span><span class="p">,</span> <span class="err">&#39;</span><span class="n">hesp</span><span class="err">&#39;</span><span class="p">);</span>    
+    <span class="n">RtlZeroMemory</span><span class="p">(</span><span class="n">vmhost_Stack</span><span class="p">,</span> <span class="mi">4096</span><span class="p">);</span>
+    <span class="n">DbgPrint</span><span class="p">(</span><span class="s">&#34;vmhost_Stack %x</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">vmhost_Stack</span><span class="p">);</span>
+
+    <span class="n">vmguest_Stack</span> <span class="o">=</span> <span class="n">ExAllocatePoolWithTag</span><span class="p">(</span><span class="n">NonPagedPool</span><span class="p">,</span> <span class="mi">4096</span><span class="p">,</span> <span class="err">&#39;</span><span class="n">gesp</span><span class="err">&#39;</span><span class="p">);</span>
+    <span class="n">RtlZeroMemory</span><span class="p">(</span><span class="n">vmguest_Stack</span><span class="p">,</span> <span class="mi">4096</span><span class="p">);</span>
+    <span class="n">DbgPrint</span><span class="p">(</span><span class="s">&#34;vmguest_Stack %x</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">vmguest_Stack</span><span class="p">);</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>接下来时最关键是最关键的VMCS Region的填充，Intel规定了这块内存需要填充以下域 (参考 Intel-64-ia-32&ndash;system-programming-manual-vol-3 Chapter 24.3)：</p>
+<ul>
+<li>Guest-state area（虚拟机状态域）:进入CPU进入VM时需要从这里读取信息，VMExit时将当时的VM CPU状态信息保存在这，用以下次进入，保存状态例如各种CR寄存器，通用寄存器，GDTR等等</li>
+<li>Host-state  area（宿主机状态域）:VM发生EXIT进入Hypervisor时，恢复VMM的执行，保存HOST的CPU状态信息，通用寄存器，堆栈，控制寄存器等等</li>
+<li>VM-Execution Control Fields（VM执行控制域）: 用以控制VM在什么条件下产出VMEXIT事件，如读写CR3等等</li>
+<li>VMEntry Control Fields（VMEntry 控制域）:控制进入VM时的一些行为，如是否Load DR寄存器</li>
+<li>VM-Exit Control Fields （VMExit 控制域）:控制VM发生EXIT事件时的行为，</li>
+<li>VM-Exit Information Fields（VMExit 信息域）:表示了VM发生EXIT事件的原因，可以和VM-Execution Control Fields做配合调试</li>
+</ul>
+<p>这里学到一个小技巧，可以根据vmlaunch指令的运行，配合vmread VM_INSTRUCTION_ERROR，来判断这些域基本填写是否正确，错误码对应的原因可以查Chapter30.4</p>
+<p><a href="/images/assets/post4/page1.PNG" rel=""><img src="/images/assets/post1/page4.PNG" width="100%"/></a></p>
+<p>首先是填写Host Area,使用如下类似的填写方式，这里要注意的是必须使用vmwrite的方式，给对应的字段填写，不能自己通过指针啥的方式</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++">    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_HOSTAREA_CR0</span><span class="p">,</span> <span class="n">__readcr0</span><span class="p">());</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_HOSTAREA_CR3</span><span class="p">,</span> <span class="n">__readcr3</span><span class="p">());</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_HOSTAREA_CR4</span><span class="p">,</span> <span class="n">__readcr4</span><span class="p">());</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_HOSTAREA_CS</span><span class="p">,</span> <span class="n">readcs</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mh">0xfff8</span><span class="p">);</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_HOSTAREA_DS</span><span class="p">,</span> <span class="n">readds</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mh">0xfff8</span><span class="p">);</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_HOSTAREA_ES</span><span class="p">,</span> <span class="n">reades</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mh">0xfff8</span><span class="p">);</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_HOSTAREA_SS</span><span class="p">,</span> <span class="n">readss</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mh">0xfff8</span><span class="p">);</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_HOSTAREA_FS</span><span class="p">,</span> <span class="n">readfs</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mh">0xfff8</span><span class="p">);</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_HOSTAREA_GS</span><span class="p">,</span> <span class="n">readgs</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mh">0xfff8</span><span class="p">);</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_HOSTAREA_TR</span><span class="p">,</span> <span class="n">readtr</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mh">0xfff8</span><span class="p">);</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>指定vmexit发生时，跳转到VMM的代码地址</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++"><span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_HOSTAREA_RIP</span><span class="p">,</span> <span class="p">(</span><span class="n">ULONG</span><span class="p">)</span><span class="n">vmx_vmmhostentry</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>Chapter24.5可以看到，Intel规定必须要填写的字段，像读取段寄存器，控制寄存器这种网上都是构建汇编如mov eax,es 这种也可以，不过比较推荐使用微软提供的库:#include &lt;intrin.h&gt;,微软出品，必属精品</p>
+<p>Guest Area填写的东西就比较多了，比如像填写段寄存器，需要填写选择子，base,limit以及属性，这里参考了newbluepill的方式，动态的去GDT表里面解析段描述符，获取各种字段所需的值</p>
+<p><a href="/images/assets/post1/page5.PNG" rel=""><img src="/images/assets/post1/page5.PNG" width="100%"/></a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++">	<span class="n">SegDesc</span> <span class="o">=</span> <span class="p">(</span><span class="n">PSEGMENT_DESCRIPTOR2</span><span class="p">)((</span><span class="n">PUCHAR</span><span class="p">)</span><span class="n">GdtBase</span> <span class="o">+</span> <span class="p">(</span><span class="n">Selector</span> <span class="o">&amp;</span> <span class="o">~</span><span class="mh">0x7</span><span class="p">));</span>
+	<span class="c1">// 段选择子
+</span><span class="c1"></span>	<span class="n">SegmentSelector</span><span class="o">-&gt;</span><span class="n">sel</span> <span class="o">=</span> <span class="n">Selector</span><span class="p">;</span>
+	<span class="c1">// 段基址15-39位 55-63位
+</span><span class="c1"></span>	<span class="n">SegmentSelector</span><span class="o">-&gt;</span><span class="n">base</span> <span class="o">=</span> <span class="n">SegDesc</span><span class="o">-&gt;</span><span class="n">base0</span> <span class="o">|</span> <span class="n">SegDesc</span><span class="o">-&gt;</span><span class="n">base1</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span> <span class="o">|</span> <span class="n">SegDesc</span><span class="o">-&gt;</span><span class="n">base2</span> <span class="o">&lt;&lt;</span> <span class="mi">24</span><span class="p">;</span>
+	<span class="c1">// 段限长0-15位  47-51位
+</span><span class="c1"></span>	<span class="n">SegmentSelector</span><span class="o">-&gt;</span><span class="n">limit</span> <span class="o">=</span> <span class="n">SegDesc</span><span class="o">-&gt;</span><span class="n">limit0</span> <span class="o">|</span> <span class="p">(</span><span class="n">SegDesc</span><span class="o">-&gt;</span><span class="n">limit1attr1</span> <span class="o">&amp;</span> <span class="mh">0xf</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">;</span>
+	<span class="c1">// 段属性39-47 51-55 
+</span><span class="c1"></span>	<span class="n">SegmentSelector</span><span class="o">-&gt;</span><span class="n">attributes</span><span class="p">.</span><span class="n">UCHARs</span> <span class="o">=</span> <span class="n">SegDesc</span><span class="o">-&gt;</span><span class="n">attr0</span> <span class="o">|</span> <span class="p">(</span><span class="n">SegDesc</span><span class="o">-&gt;</span><span class="n">limit1attr1</span> <span class="o">&amp;</span> <span class="mh">0xf0</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这里注意，HOST和GUSET中都填写了类似如下字段：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++">    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_GUSTAREA_SYSENTER_CS</span><span class="p">,</span> <span class="n">__readmsr</span><span class="p">(</span><span class="n">MSR_IA32_SYSENTER_CS</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">);</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_GUSTAREA_SYSENTER_EIP</span><span class="p">,</span> <span class="n">__readmsr</span><span class="p">(</span><span class="n">MSR_IA32_SYSENTER_EIP</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">);</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_GUSTAREA_SYSENTER_ESP</span><span class="p">,</span> <span class="n">__readmsr</span><span class="p">(</span><span class="n">MSR_IA32_SYSENTER_ESP</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这个就像正常的CPU模式下，3环进0环一样，需要切换环境，需要新的堆栈，以及入口EIP等，可以rdmsr MSR_IA32_SYSENTER_EIP(0x176)看看，机器如果支持快速调用，这里都是KifastCallEntry</p>
+<p>在填写各种段寄存器的时候，host和guest中都有&amp;0xFFF8的操作，这个是为了将最后的RPL清0，这个和段权限检查相关，访问某个段，RPL和CPL要在数值上小于等于DPL</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++"><span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_GUSTAREA_ES</span> <span class="o">+</span> <span class="n">Segreg</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">Selector</span> <span class="o">&amp;</span> <span class="mh">0xFFF8</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>临时堆栈的设置，这里+0x1000,就相当于ESP+0x1000,vmguest_Stack我们之前分配了4k,栈是逆向增长的，这个操作就相当于ESP指向了分配的栈的栈底</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++"> <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_GUSTAREA_RSP</span><span class="p">,</span><span class="n">vmguest_Stack</span> <span class="o">+</span> <span class="mh">0x1000</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>虚拟机运行控制域，参考Chapter 24.6,这里填写的字段主要就是确定发生vmexit事件的原因，，这里的填写是有要求的，除了自定义填写之外，有些bit位是需要设置1，有些bit位是需要设置为0，这个根据对应的MSR寄存器来确定，具体AREA中填写的字段可以参考白皮书，这里VMCS_PROCESSOR_BASE_CONTTOL为例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++"> <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_PROCESSOR_BASE_CONTTOL</span><span class="p">,</span> <span class="n">AdjustControlBit</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">MSR_IA32_VMX_PROCBASED_CTLS</span><span class="p">));</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>我们以最小的发生vmexit事件的拦截原则，其中必须置位的根据IA32_VMX_PROCBASED_CTLS寄存器确定</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0: kd&gt; rdmsr 482
+msr[482] = fff9fffe`0401e172
+0: kd&gt; .formats 0401e172
+Evaluate expression:
+  Hex:     0401e172
+  Decimal: 67232114
+  Octal:   00400360562
+  Binary:  00000100 00000001 11100001 01110010
+  Chars:   ...r
+  Time:    Fri Feb 18 11:35:14 1972
+  Float:   low 1.52674e-036 high 0
+  Double:  3.32171e-316
+
+</code></pre></td></tr></table>
+</div>
+</div><p>我们可以看到对应msr寄存器的内容，第四个字节中的1代表该位必须置1，高四个字节中的0代表该位必须置0，在这里，15，16为1，也就对应一下情况发生时必须产生vmexit事件，然后VMM要对其进行拦截处理</p>
+<p><a href="/images/assets/post1/page6.PNG" rel=""><img src="/images/assets/post1/page6.PNG" width="100%"/></a></p>
+<p>其余的字段填写是类似的，根据需要对应的bit位置位就行</p>
+<p>基本的area都按要求填写完毕，现在就可以vmlaunch启动你的虚拟机了，但是这个时候我们还没有对虚拟机的vmexit事件做处理，一个基本的情况就是，一运行之后，vmexit事件产出，代码就会跳转到先前指定的hostarea_rip的位置，说明你需要对这个vmexit世界进行处理，然后再vmresume，让vm继续运行</p>
+<p>而vmexit产生的原因，可以通过vmread VM_EXIT_REASON得到，参考Intel-64-ia-32&ndash;system-programming-manual-vol-3 附录3 VMX Basic Exit Reasons 表格，一般基础的代码写完之后，遇到最多的一个vmexit原因就是CR3的读取和写入，需要注意的，在这个地方，接管vm过来的代码，处理vmexit时，要记得保存现场，就是一些寄存器要保存，在处理完事件之后，恢复即可</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm"><span class="nf">vmx_vmmhostentry</span> <span class="no">proc</span>
+        
+        <span class="nf">pushad</span>
+        <span class="nf">push</span> <span class="no">esp</span>
+        <span class="nf">call</span> <span class="no">VmhostEntrydbg</span>
+        <span class="nf">popad</span>
+        <span class="nf">vmresume</span>
+        
+<span class="nf">vmx_vmmhostentry</span> <span class="no">endp</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>这个地方保存的时候，保存之前Guest域中没有填写的就可以了，其他的会自己保存在那个域里面，这里我只保存了下通用寄存器，VmhostEntrydbg是定义的一个vmexit处理函数</p>
+<p>以CR3的读写为例，部分代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++">    <span class="n">CrQulification</span> <span class="o">=</span> <span class="n">vmx_vmread</span><span class="p">(</span><span class="n">VMCS_EXIT_QUALIFICTION</span><span class="p">);</span>
+    <span class="n">CRNumber</span> <span class="o">=</span> <span class="p">(</span><span class="n">CrQulification</span> <span class="o">&amp;</span> <span class="mh">0x0000000f</span><span class="p">);</span>
+    <span class="n">Accesstype</span> <span class="o">=</span> <span class="p">((</span><span class="n">CrQulification</span> <span class="o">&amp;</span> <span class="mh">0x00000030</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">);</span>
+    <span class="n">operandtype</span> <span class="o">=</span> <span class="p">((</span><span class="n">CrQulification</span> <span class="o">&amp;</span> <span class="mh">0x00000040</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">);</span>
+    <span class="n">MovrCRPurposeReg</span> <span class="o">=</span> <span class="p">((</span><span class="n">CrQulification</span> <span class="o">&amp;</span> <span class="mh">0x00000F00</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">Accesstype</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">{</span>
+        
+        <span class="k">switch</span> <span class="p">(</span><span class="n">MovrCRPurposeReg</span><span class="p">)</span>
+        <span class="p">{</span>
+        <span class="k">case</span> <span class="mi">0</span><span class="o">:</span>
+        <span class="p">{</span>
+            <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_GUSTAREA_CR3</span><span class="p">,</span> <span class="n">g_GUEST_REGS</span><span class="o">-&gt;</span><span class="n">eax</span><span class="p">);</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这里读取了一个QUALIFICTION这样的一个信息，这个信息可以理解为在发生对CR寄存器的访问和写入时的具体信息，如是从那个寄存器写入的，是读取还是写入，参考chapter 27.2</p>
+<p><a href="/images/assets/post1/page7.PNG" rel=""><img src="/images/assets/post1/page7.PNG" width="100%"/></a></p>
+<p>其中的bit位就对应了相关信息，只需要做一下解析就行了，例如通过bit postions 3:0 你可以获取到和那个CR寄存器发生了交互，在32位机器上bit3总为0，bit postions 5:4代表读取还是写入，0代表CR是目的操作数，此时写入，1代表源操作数，此时读取，这里的11：8要注意这个寄存器的顺序，因为我们要拦截对CR寄存器的操作，意味着我们要帮助vm完成这个过程，通过bit postions 11：8得到和CR寄存器交互的寄存器后一般如果构造这样一个结构体保存了这些通用寄存器的话，你需要注意你的寄存器的排列顺序</p>
+<p>处理完vmexit事件后，就要返回VM了，这里的小细节：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++">    <span class="n">ULONG</span> <span class="n">instructionlen</span> <span class="o">=</span> <span class="n">vmx_vmread</span><span class="p">(</span><span class="n">VMCS_INSTRUCTION_LENGH</span><span class="p">);</span>
+    <span class="n">ULONG</span> <span class="n">geip</span> <span class="o">=</span> <span class="n">vmx_vmread</span><span class="p">(</span><span class="n">GUEST_RIP</span><span class="p">);</span>
+    <span class="n">ULONG</span> <span class="n">guestnexteip</span> <span class="o">=</span> <span class="n">geip</span> <span class="o">+</span> <span class="n">instructionlen</span><span class="p">;</span>
+    <span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_GUSTAREA_RIP</span><span class="p">,</span> <span class="n">guestnexteip</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>可以看到最后的返回eip加了一个值，这个VMCS_INSTRUCTION_LENGH，就是当时发生VMEXIT时，CPU执行的那条指令的长度,比如MOV eax,cr3 被我们拦截并处理完了，那么EIP也应当在原来的基础上加上这条指令的长度，接着执行下一条指令，最终调用vmresume继续执行VM即可</p>
+<p>一个简单的VT框架就是这些吧，可能还有其他的点，后续遇到再深入学习吧！！！</p>
+<h3 id="扩展">扩展</h3>
+<p>1.VMEXIT导致GDT Limit发生改变，使用ARK工具查看GDT相关信息时出发BSoD</p>
+<p>这个是在看zhouhe的VT教程看到的，至于原因，白皮书说,VMEXIT时会加载一些host的CR寄存器,msr寄存器,加载GDTR和IDTR时，limit会从3ff变为ffff:</p>
+<p><a href="/images/assets/post1/page8.PNG" rel=""><img src="/images/assets/post1/page8.PNG" width="100%"/></a></p>
+<p>在驱动加载,开启VT前可以保存一份GDTR，驱动卸载，关闭VT后恢复即可</p>
+<p>2.VM第一次初始化运行，驱动继续执行的问题,就是说我们运行vmlaunch之后，进入虚拟机里，后续的驱动代码时不会执行的，卡死的状态，所以我们要构造一个上下文环境，在vmlaunch之后，我们的驱动代码可以正常执行完毕：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++">    <span class="n">VTenable_before</span><span class="p">();</span>
+    <span class="n">StartVMXCS</span><span class="p">();</span>                                                          
+    <span class="n">VTenable_after</span><span class="p">();</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>在VMCS初始化填写前后，构造两个函数，我这里汇编实现：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm"><span class="nf">VTenable_before</span> <span class="no">proc</span>
+        <span class="nf">cli</span>
+        <span class="nf">mov</span> <span class="no">DriverEAX</span><span class="p">,</span><span class="no">eax</span>
+        <span class="nf">mov</span> <span class="no">DriverECX</span><span class="p">,</span><span class="no">ecx</span>
+        <span class="nf">mov</span> <span class="no">DriverEDX</span><span class="p">,</span><span class="no">edx</span>
+        <span class="nf">mov</span> <span class="no">DriverEBX</span><span class="p">,</span><span class="no">ebx</span>
+        <span class="nf">mov</span> <span class="no">DriverESP</span><span class="p">,</span><span class="no">esp</span>
+        <span class="nf">mov</span> <span class="no">DriverEBP</span><span class="p">,</span><span class="no">ebp</span>
+        <span class="nf">mov</span> <span class="no">DriverESI</span><span class="p">,</span><span class="no">esi</span>
+        <span class="nf">mov</span> <span class="no">DriverEDI</span><span class="p">,</span><span class="no">edi</span>
+        <span class="nf">pushfd</span>
+        <span class="nf">pop</span> <span class="no">DriverEFL</span>
+        <span class="nf">sti</span>
+        <span class="nf">ret</span>
+
+<span class="nf">VTenable_before</span> <span class="no">endp</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>之前保存现场，之后恢复现场，第一次进入VM时，就会跳转到我们的vmx_GuestReturn代码执行，而这个vmx_GuestReturn功能就是调用VTenable_after()，确保驱动正常执行完毕</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++"><span class="n">vmx_vmwrite</span><span class="p">(</span><span class="n">VMCS_GUSTAREA_RIP</span><span class="p">,</span> <span class="p">(</span><span class="n">ULONG</span><span class="p">)</span><span class="n">vmx_GuestReturn</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>3.多核问题
+看雪小宝来了说过这个问题，就是说我们VT的开启，肯定是以CPU为基准的，单核那就在这个核上开启VT就行，但如果是多核的情况下，不可能仅在个别核上开启VT，那必然时蓝屏啊，所以需要扩展至多核兼容，比如分配各种内存时，需要每个核都分配，同样在执行VT代码的时候，每个核都要执行一边才行</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">KeNumberProcessors</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">KeSetSystemAffinityThread</span><span class="p">((</span><span class="n">KAFFINITY</span><span class="p">)(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">i</span><span class="p">));</span>
+        <span class="n">VT_Enable</span><span class="p">();</span>
+        <span class="n">KeRevertToUserAffinityThread</span><span class="p">();</span>
+        <span class="n">DbgPrint</span><span class="p">(</span><span class="s">&#34;stop vt on cpu [%d]...</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>具体API的使用以及用途,参考MSDN文档即可</p>
+<p>Code: <a href="https://github.com/Jhinxs/x32_VT" target="_blank" rel="noopener noreffer">https://github.com/Jhinxs/x32_VT</a></p>
+<p>Reference:</p>
+<ul>
+<li><a href="https://github.com/zzhouhe/VT_Learn/tree/master/MinimalVT" target="_blank" rel="noopener noreffer">https://github.com/zzhouhe/VT_Learn/tree/master/MinimalVT</a></li>
+<li><a href="https://bbs.pediy.com/thread-211973.htm" target="_blank" rel="noopener noreffer">https://bbs.pediy.com/thread-211973.htm</a></li>
+<li><a href="https://github.com/haidragon/newbluepill" target="_blank" rel="noopener noreffer">https://github.com/haidragon/newbluepill</a></li>
+<li>&laquo;new blue pill:深入理解硬件虚拟机&raquo;</li>
+<li>&laquo;Intel 64-ia-32&ndash;system-programming-manual-vol-3&raquo;</li>
+</ul>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2021-06-02</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="https://jhinxs.com/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" data-title="Intel VT-x mini VT 框架的实现" data-via="realDonaldTrump" data-hashtags="Kernel,VT"><i class="fab fa-twitter fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://jhinxs.com/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" data-hashtag="Kernel"><i class="fab fa-facebook-square fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Hacker News" data-sharer="hackernews" data-url="https://jhinxs.com/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" data-title="Intel VT-x mini VT 框架的实现"><i class="fab fa-hacker-news fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Line" data-sharer="line" data-url="https://jhinxs.com/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" data-title="Intel VT-x mini VT 框架的实现"><i data-svg-src="https://cdn.jsdelivr.net/npm/simple-icons@2.14.0/icons/line.svg"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://jhinxs.com/zh-cn/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" data-title="Intel VT-x mini VT 框架的实现"><i class="fab fa-weibo fa-fw"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/zh-cn/tags/kernel/">Kernel</a>,&nbsp;<a href="/zh-cn/tags/vt/">VT</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/zh-cn/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav">
+            <a href="/zh-cn/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" class="next" rel="next" title="x64的一些特性">x64的一些特性<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+</article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021 - 2022</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/zh-cn/" target="_blank">jhinxs</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">Jhinxs Story</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/smooth-scroll@16.1.3/dist/smooth-scroll.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.37.1/dist/autocomplete.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lunr@2.3.8/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lazysizes@5.2.2/lazysizes.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js"></script><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.4.0/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":10},"comment":{},"search":{"highlightTag":"em","lunrIndexURL":"/zh-cn/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":50,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>
