@@ -6,14 +6,23 @@
     <description>Recent content in VT on Jhin&#39;s Story</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 02 Jun 2021 12:37:55 +0800</lastBuildDate><atom:link href="https://jhinxs.com/tags/vt/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 02 Mar 2022 15:22:06 +0800</lastBuildDate><atom:link href="https://jhinxs.com/tags/vt/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Inter VT-x mini VT 框架的实现</title>
-      <link>https://jhinxs.com/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
+      <title>Intel VT x64 EPT Hook框架的实现</title>
+      <link>https://jhinxs.com/post/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
+      <pubDate>Wed, 02 Mar 2022 15:22:06 +0800</pubDate>
+      
+      <guid>https://jhinxs.com/post/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
+      <description>主要记录下X64VT以及实现EPT Hook时的一些关键点 基本的VT开启 这部分和之前32位的没什么太大的区别，主要是在填写vmc字段时，需要额外填写如IA32_EFER，IA32E_MODE这种必须要填</description>
+    </item>
+    
+    <item>
+      <title>Intel VT-x mini VT 框架的实现</title>
+      <link>https://jhinxs.com/post/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
       <pubDate>Wed, 02 Jun 2021 12:37:55 +0800</pubDate>
       
-      <guid>https://jhinxs.com/post/inter-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
-      <description>Inter VT-x是Inter芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，</description>
+      <guid>https://jhinxs.com/post/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
+      <description>Intel VT-x是Intel芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，</description>
     </item>
     
   </channel>
