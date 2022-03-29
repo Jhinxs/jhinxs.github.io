@@ -202,7 +202,57 @@ ULONG64 GetNTAPIAddress()
 	return address;
 }
 ```
-这里只是未开启内核页表隔离的情况，开启内核页表隔离lstar msr读取到的是KiSystemCall64Shadow地址，可能需要从KiSystemCall64Shadow开始往上搜了，具体没试过，来自于网上公开的方法。
+这里只是未开启内核页表隔离的情况，开启内核页表隔离lstar msr读取到的是KiSystemCall64Shadow地址，可能需要从KiSystemCall64Shadow开始往上搜了。  
+关于API HOOK，测试时对NtTerminateProcess做了Inline Hook的测试  
+
+Hook的步骤和通常的Hook没啥区别，在API开始的几条指令找合适的位置插入一条跳转指令，跳到我们的代码，执行完我们的代码后，跳转回当时插入的指令的下一条指令，也就是按着原路继续执行。  
+
+这里利用ETP需要将首先将原本的函数对应的物理页拷贝一份过来，然后对拷贝的EPT的页面做HOOK通过ETP Violation的处理，就可以欺骗读写行为，绕过PG等扫描，直接修改原本的物理页是不仅需要关闭写保护而且是没有意义的。  
+
+```C++
+	/*
+	    12 hook bytes:
+	    mov rax,target64
+		JMP rax                     
+	*/
+	TargetBuffer[0] = 0x48;
+	TargetBuffer[1] = 0xb8;
+	*(ULONG64*)&TargetBuffer[2] = TargetAddress;
+	TargetBuffer[10] = 0xFF;
+	TargetBuffer[11] = 0xE0;
+```
+这段代码就是构建简单的跳转指令，也可以使用PUSH，RET这种方式实现跳转  
+
+```h
+2: kd> u 0xffffdd8bfd4f4f40
+ffffdd8b`fd4f4f40 48b820531b3900f8ffff mov rax,offset hvcv!NtTerminateProcessHook (fffff800`391b5320)
+ffffdd8b`fd4f4f4a ffe0            jmp     rax
+```
+这里我们临时分配一个空间，将构造好的跳转指令以及原函数需要跳过的指令（跳过是为了不破坏原有的指令，这里使用了[LDE](https://github.com/BeaEngine/lde64),计算跳过的指令长度），首先将跳转的hook函数的指令拷贝到原本的跳转的位置
+```h
+2: kd> u 0xffffdd8bf5935e50
+ffffdd8b`f5935e50 4c8bdc          mov     r11,rsp
+ffffdd8b`f5935e53 49895b10        mov     qword ptr [r11+10h],rbx
+ffffdd8b`f5935e57 49896b18        mov     qword ptr [r11+18h],rbp
+ffffdd8b`f5935e5b 57              push    rdi
+ffffdd8b`f5935e5c 48b84c3f6b3300f8ffff mov rax,offset nt!NtTerminateProcess+0xc (fffff800`336b3f4c)
+ffffdd8b`f5935e66 ffe0            jmp     rax
+```
+然后将构造的返回正常函数流程的指令拷贝到实现定义好的函数指针处  
+[<img src="/images/assets/post3/hook.PNG" width="100%"/>](/images/assets/post3/hook.PNG)  
+
+大概的整个流程：
+* 1.对目标函数对应的EPT页面RWX权限全部清0  
+  
+* 2.访问权限不足触发EPT Violation  
+  
+* 3.如果是执行则修改EPT页面挂上我们的HOOK，然后给执行的权限  
+  
+* 4.如果是读写则原封不动，然后给读写的权限  
+  
+* 5.HOOK执行完毕，走正常的函数流程  
+  
+
 整个VT框架具体的实现细节还是看代码比较好，不然字太多也打不过了。  
 
 Code:[https://github.com/Jhinxs/hvcv](https://github.com/Jhinxs/hvcv)

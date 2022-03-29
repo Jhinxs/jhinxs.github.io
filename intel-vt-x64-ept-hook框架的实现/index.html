@@ -45,7 +45,7 @@ EPT的构建 EPT的构建，感觉就是实现一个具体的地址转换的过�
         "mainEntityOfPage": {
             "@type": "WebPage",
             "@id": "https:\/\/jhinxs.com\/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0\/"
-        },"image": ["https:\/\/jhinxs.com\/jhin.png"],"genre": "posts","keywords": "Kernel, VT","wordcount":  677 ,
+        },"image": ["https:\/\/jhinxs.com\/jhin.png"],"genre": "posts","keywords": "Kernel, VT","wordcount":  785 ,
         "url": "https:\/\/jhinxs.com\/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0\/","datePublished": "2022-03-02T15:22:06+08:00","dateModified": "2022-03-02T15:22:06+08:00","license": "jhinxs story","publisher": {
             "@type": "Organization",
             "name": "xxxx","logo": "https:\/\/jhinxs.com\/jhin.png"},"author": {
@@ -126,7 +126,7 @@ EPT的构建 EPT的构建，感觉就是实现一个具体的地址转换的过�
             <div class="toc-content" id="toc-content-auto"></div>
         </div><article class="page single"><h1 class="single-title animated flipInX">Intel VT x64 EPT Hook框架的实现</h1><div class="post-meta">
             <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-category">included in <a href="/categories/windows-kernel/"><i class="far fa-folder fa-fw"></i>Windows Kernel</a></span></div>
-            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2022-03-02">2022-03-02</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;677 words&nbsp;
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2022-03-02">2022-03-02</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;785 words&nbsp;
                 <i class="far fa-clock fa-fw"></i>&nbsp;4 minutes&nbsp;</div>
         </div><div class="details toc" id="toc-static"  kept="">
                 <div class="details-summary toc-title">
@@ -514,8 +514,91 @@ ALL_CONTEXT：忽略描述符，刷新所有EPTP对应的所有缓存。</p>
 <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>这里只是未开启内核页表隔离的情况，开启内核页表隔离lstar msr读取到的是KiSystemCall64Shadow地址，可能需要从KiSystemCall64Shadow开始往上搜了，具体没试过，来自于网上公开的方法。
-整个VT框架具体的实现细节还是看代码比较好，不然字太多也打不过了。</p>
+</div><p>这里只是未开启内核页表隔离的情况，开启内核页表隔离lstar msr读取到的是KiSystemCall64Shadow地址，可能需要从KiSystemCall64Shadow开始往上搜了。<br>
+关于API HOOK，测试时对NtTerminateProcess做了Inline Hook的测试</p>
+<p>Hook的步骤和通常的Hook没啥区别，在API开始的几条指令找合适的位置插入一条跳转指令，跳到我们的代码，执行完我们的代码后，跳转回当时插入的指令的下一条指令，也就是按着原路继续执行。</p>
+<p>这里利用ETP需要将首先将原本的函数对应的物理页拷贝一份过来，然后对拷贝的EPT的页面做HOOK通过ETP Violation的处理，就可以欺骗读写行为，绕过PG等扫描，直接修改原本的物理页是不仅需要关闭写保护而且是没有意义的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C++" data-lang="C++">	<span class="cm">/*
+</span><span class="cm">	    12 hook bytes:
+</span><span class="cm">	    mov rax,target64
+</span><span class="cm">		JMP rax                     
+</span><span class="cm">	*/</span>
+	<span class="n">TargetBuffer</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x48</span><span class="p">;</span>
+	<span class="n">TargetBuffer</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0xb8</span><span class="p">;</span>
+	<span class="o">*</span><span class="p">(</span><span class="n">ULONG64</span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">TargetBuffer</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">TargetAddress</span><span class="p">;</span>
+	<span class="n">TargetBuffer</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0xFF</span><span class="p">;</span>
+	<span class="n">TargetBuffer</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0xE0</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这段代码就是构建简单的跳转指令，也可以使用PUSH，RET这种方式实现跳转</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-h" data-lang="h"><span class="mi">2</span><span class="o">:</span> <span class="n">kd</span><span class="o">&gt;</span> <span class="n">u</span> <span class="mh">0xffffdd8bfd4f4f40</span>
+<span class="n">ffffdd8b</span><span class="err">`</span><span class="n">fd4f4f40</span> <span class="mi">48</span><span class="n">b820531b3900f8ffff</span> <span class="n">mov</span> <span class="n">rax</span><span class="p">,</span><span class="n">offset</span> <span class="n">hvcv</span><span class="o">!</span><span class="n">NtTerminateProcessHook</span> <span class="p">(</span><span class="n">fffff800</span><span class="err">`</span><span class="mi">391</span><span class="n">b5320</span><span class="p">)</span>
+<span class="n">ffffdd8b</span><span class="err">`</span><span class="n">fd4f4f4a</span> <span class="n">ffe0</span>            <span class="n">jmp</span>     <span class="n">rax</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这里我们临时分配一个空间，将构造好的跳转指令以及原函数需要跳过的指令（跳过是为了不破坏原有的指令，这里使用了<a href="https://github.com/BeaEngine/lde64" target="_blank" rel="noopener noreffer">LDE</a>,计算跳过的指令长度），首先将跳转的hook函数的指令拷贝到原本的跳转的位置</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-h" data-lang="h"><span class="mi">2</span><span class="o">:</span> <span class="n">kd</span><span class="o">&gt;</span> <span class="n">u</span> <span class="mh">0xffffdd8bf5935e50</span>
+<span class="n">ffffdd8b</span><span class="err">`</span><span class="n">f5935e50</span> <span class="mi">4</span><span class="n">c8bdc</span>          <span class="n">mov</span>     <span class="n">r11</span><span class="p">,</span><span class="n">rsp</span>
+<span class="n">ffffdd8b</span><span class="err">`</span><span class="n">f5935e53</span> <span class="mi">49895</span><span class="n">b10</span>        <span class="n">mov</span>     <span class="n">qword</span> <span class="n">ptr</span> <span class="p">[</span><span class="n">r11</span><span class="o">+</span><span class="mi">10</span><span class="n">h</span><span class="p">],</span><span class="n">rbx</span>
+<span class="n">ffffdd8b</span><span class="err">`</span><span class="n">f5935e57</span> <span class="mi">49896</span><span class="n">b18</span>        <span class="n">mov</span>     <span class="n">qword</span> <span class="n">ptr</span> <span class="p">[</span><span class="n">r11</span><span class="o">+</span><span class="mi">18</span><span class="n">h</span><span class="p">],</span><span class="n">rbp</span>
+<span class="n">ffffdd8b</span><span class="err">`</span><span class="n">f5935e5b</span> <span class="mi">57</span>              <span class="n">push</span>    <span class="n">rdi</span>
+<span class="n">ffffdd8b</span><span class="err">`</span><span class="n">f5935e5c</span> <span class="mi">48</span><span class="n">b84c3f6b3300f8ffff</span> <span class="n">mov</span> <span class="n">rax</span><span class="p">,</span><span class="n">offset</span> <span class="n">nt</span><span class="o">!</span><span class="n">NtTerminateProcess</span><span class="o">+</span><span class="mh">0xc</span> <span class="p">(</span><span class="n">fffff800</span><span class="err">`</span><span class="mi">336</span><span class="n">b3f4c</span><span class="p">)</span>
+<span class="n">ffffdd8b</span><span class="err">`</span><span class="n">f5935e66</span> <span class="n">ffe0</span>            <span class="n">jmp</span>     <span class="n">rax</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>然后将构造的返回正常函数流程的指令拷贝到实现定义好的函数指针处<br>
+<a href="/images/assets/post3/hook.PNG" rel=""><img src="/images/assets/post3/hook.PNG" width="100%"/></a></p>
+<p>大概的整个流程：</p>
+<ul>
+<li>
+<p>1.对目标函数对应的EPT页面RWX权限全部清0</p>
+</li>
+<li>
+<p>2.访问权限不足触发EPT Violation</p>
+</li>
+<li>
+<p>3.如果是执行则修改EPT页面挂上我们的HOOK，然后给执行的权限</p>
+</li>
+<li>
+<p>4.如果是读写则原封不动，然后给读写的权限</p>
+</li>
+<li>
+<p>5.HOOK执行完毕，走正常的函数流程</p>
+</li>
+</ul>
+<p>整个VT框架具体的实现细节还是看代码比较好，不然字太多也打不过了。</p>
 <p>Code:<a href="https://github.com/Jhinxs/hvcv" target="_blank" rel="noopener noreffer">https://github.com/Jhinxs/hvcv</a></p>
 </div><div class="post-footer" id="post-footer">
     <div class="post-info">
