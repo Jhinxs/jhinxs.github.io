@@ -128,7 +128,7 @@ IA32_MTRR_PHYSMASK_REGISTER MSR寄存器可以获取对应物理内存的范围�
     pde_2M.Bits.MemoryType = memorytype_mtrr;
 ```
 #### EPT Violation
-这个是实现我们EPT Hook的关键，在通常的VA->PA的访问过程中,存在一个TLB的机制，就是说操作系统会缓存经常访问的虚拟地址与物理地址的映射关系，从而提高访问效率，而TLB又可以分为数据TLB和指令TLB，也是就分别对应于读写和执行，在此基础上，就出现了一种ShadowWalker的技术，具体可以自行GOOGLE，将读写和执行的行为分离开来,当触发读写异常时,分配一个真实的页面，当触发执行异常时，分配假的页面，这样看起来代码时正常的，但是实际执行的时候，执行的是另一份代码，[Github](https://github.com/Jhinxs/ProtectedModeCode/blob/main/shadowwalker.cpp)  这是我之前跟着zhouhe学着写的一份SW代码通过修改缺页中断，实现简易的效果 。  
+这个是实现我们EPT Hook的关键，在通常的VA->PA的访问过程中,存在一个TLB的机制，就是说操作系统会缓存经常访问的虚拟地址与物理地址的映射关系，从而提高访问效率，而TLB又可以分为数据TLB和指令TLB，也是就分别对应于读写和执行，在此基础上，就出现了一种ShadowWalker的技术，具体可以自行GOOGLE，将读写和执行的行为分离开来,当触发读写异常时,分配一个真实的页面，当触发执行异常时，分配假的页面，这样看起来代码时正常的，但是实际执行的时候，执行的是另一份代码，[Github](https://github.com/Jhinxs/ProtectedModeCode/blob/main/shadowwalker.cpp)  这是我之前跟着zhouhe学着写的一份SW代码通过修改Page Fault中断，实现简易的效果 。  
 在EPT中当产生EPT Violation时将会发生VMexit，此时需要在VM HOST中进行事件的接管并处理EPT Violation事件，那么这个时候就可以对RWX行为做不同的处理。
 ```C++
      PPTE hookpagepte = EptGetPTEENTRY(pEptState->EptPageTable, phyalign);
@@ -162,9 +162,10 @@ VOID InveptSingleContext(ULONG64 EptPointer)
 	return vmx_invept( VEPT_SINGLE_CONTEXT, &Descriptor);
 }
 ```
-主要执行invept指令，该执行可以对GPA->HPA的转换产生的Cache进行刷新，而invept支持两种方式进行刷新：  
-SINGLE_CONTEXT：刷新描述符中给定的EPTP对应的所有缓存。
-ALL_CONTEXT：忽略描述符，刷新所有EPTP对应的所有缓存。
+主要执行invept指令，该执行可以对GPA->HPA的转换产生的Cache进行刷新，而invept支持两种方式进行刷新:  
+* SINGLE_CONTEXT：刷新描述符中给定的EPTP对应的所有缓存。  
+  
+* ALL_CONTEXT：忽略描述符，刷新所有EPTP对应的所有缓存。
 
 ### SSDT
 这个也没啥，就是涉及到SSDT的查找以及一些内核函数地址的查找
