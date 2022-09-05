@@ -16,7 +16,7 @@ EPT内存管理 EPT是intel为内存虚拟化而设计的一种硬件机制，�
 EPT的构建 EPT的构建，感觉就是实现一个具体的地址转换的过程，从EPTP的构建，以及其中PML4,PDPT,PDT其中各个表项的各个字段的填写
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16  pEptState-&gt;EptPageTable = PageTable; PageTable-&gt;PML4[0].all = 0; PageTable-&gt;PML4[0].Bits.read_access = 1; PageTable-&gt;PML4[0].Bits.write_access = 1; PageTable-&gt;PML4[0].Bits.exec_access_supervisor = 1; PageTable-&gt;PML4[0].Bits.PDPTPFN = MmGetPhysicalAddress(&amp;PageTable-&gt;PML3[0]).QuadPart &gt;&gt; 12; for (int i = 0; i &lt; VMM_EPT_PML3E_COUNT; i&#43;&#43;) { PageTable-&gt;PML3[i].all = 0; PageTable-&gt;PML3[i]." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" /><meta property="og:image" content="https://jhinxs.com/images/jhin.png"/><meta property="article:section" content="posts" />
+<meta property="og:url" content="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0.zh-cn/" /><meta property="og:image" content="https://jhinxs.com/images/jhin.png"/><meta property="article:section" content="posts" />
 <meta property="article:published_time" content="2022-03-02T15:22:06+08:00" />
 <meta property="article:modified_time" content="2022-03-02T15:22:06+08:00" />
 
@@ -36,7 +36,7 @@ EPT的构建 EPT的构建，感觉就是实现一个具体的地址转换的过�
 <meta name="application-name" content="LoveIt">
 <meta name="apple-mobile-web-app-title" content="LoveIt"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" /><link rel="prev" href="https://jhinxs.com/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" /><link rel="next" href="https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"><link rel="stylesheet" href="/lib/animate/animate.min.css"><script type="application/ld+json">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0.zh-cn/" /><link rel="prev" href="https://jhinxs.com/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" /><link rel="next" href="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"><link rel="stylesheet" href="/lib/animate/animate.min.css"><script type="application/ld+json">
     {
         "@context": "http://schema.org",
         "@type": "BlogPosting",
@@ -44,9 +44,9 @@ EPT的构建 EPT的构建，感觉就是实现一个具体的地址转换的过�
         "inLanguage": "en",
         "mainEntityOfPage": {
             "@type": "WebPage",
-            "@id": "https:\/\/jhinxs.com\/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0\/"
+            "@id": "https:\/\/jhinxs.com\/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0.zh-cn\/"
         },"image": ["https:\/\/jhinxs.com\/jhin.png"],"genre": "posts","keywords": "Kernel, VT","wordcount":  786 ,
-        "url": "https:\/\/jhinxs.com\/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0\/","datePublished": "2022-03-02T15:22:06+08:00","dateModified": "2022-03-02T15:22:06+08:00","license": "jhinxs story","publisher": {
+        "url": "https:\/\/jhinxs.com\/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0.zh-cn\/","datePublished": "2022-03-02T15:22:06+08:00","dateModified": "2022-03-02T15:22:06+08:00","license": "jhinxs story","publisher": {
             "@type": "Organization",
             "name": "xxxx","logo": "https:\/\/jhinxs.com\/jhin.png"},"author": {
                 "@type": "Person",
@@ -62,9 +62,7 @@ EPT的构建 EPT的构建，感觉就是实现一个具体的地址转换的过�
             <a href="/" title="Jhin&#39;s Story"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw'></i></span>Jhinxs</a>
         </div>
         <div class="menu">
-            <div class="menu-inner"><a class="menu-item" href="/posts/"> Posts </a><a class="menu-item" href="/tags/"> Tags </a><a class="menu-item" href="/categories/"> Categories </a><a class="menu-item" href="/about/"> About </a><a class="menu-item" href="https://github.com/Jhinxs" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw'></i>  </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item language" title="Select Language">English<i class="fas fa-chevron-right fa-fw"></i>
-                        <select class="language-select" id="language-select-desktop" onchange="location = this.value;"><option value="/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" selected>English</option><option value="/zh-cn/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">简体中文</option></select>
-                    </a><span class="menu-item search" id="search-desktop">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> Posts </a><a class="menu-item" href="/tags/"> Tags </a><a class="menu-item" href="/categories/"> Categories </a><a class="menu-item" href="/about/"> About </a><a class="menu-item" href="https://github.com/Jhinxs" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw'></i>  </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
                         <input type="text" placeholder="Search titles or contents..." id="search-input-desktop">
                         <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="Search">
                             <i class="fas fa-search fa-fw"></i>
@@ -109,9 +107,7 @@ EPT的构建 EPT的构建，感觉就是实现一个具体的地址转换的过�
                     </a>
                 </div><a class="menu-item" href="/posts/" title="">Posts</a><a class="menu-item" href="/tags/" title="">Tags</a><a class="menu-item" href="/categories/" title="">Categories</a><a class="menu-item" href="/about/" title="">About</a><a class="menu-item" href="https://github.com/Jhinxs" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw'></i></a><a href="javascript:void(0);" class="menu-item theme-switch" title="Switch Theme">
                 <i class="fas fa-adjust fa-fw"></i>
-            </a><a href="javascript:void(0);" class="menu-item" title="Select Language">English<i class="fas fa-chevron-right fa-fw"></i>
-                    <select class="language-select" onchange="location = this.value;"><option value="/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" selected>English</option><option value="/zh-cn/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">简体中文</option></select>
-                </a></div>
+            </a></div>
     </div>
 </header>
 <div class="search-dropdown desktop">
@@ -616,10 +612,10 @@ IA32_MTRR_PHYSMASK_REGISTER MSR寄存器可以获取对应物理内存的范围�
         </div>
         <div class="post-info-line">
             <div class="post-info-md"><span>
-                            <a class="link-to-markdown" href="/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/index.md" target="_blank">Read Markdown</a>
+                            <a class="link-to-markdown" href="/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0.zh-cn/index.md" target="_blank">Read Markdown</a>
                         </span></div>
             <div class="post-info-share">
-                <span><a href="javascript:void(0);" title="Share on Twitter" data-sharer="twitter" data-url="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" data-title="Intel VT x64 EPT Hook框架的实现" data-via="realDonaldTrump" data-hashtags="Kernel,VT"><i class="fab fa-twitter fa-fw"></i></a><a href="javascript:void(0);" title="Share on Facebook" data-sharer="facebook" data-url="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" data-hashtag="Kernel"><i class="fab fa-facebook-square fa-fw"></i></a><a href="javascript:void(0);" title="Share on Hacker News" data-sharer="hackernews" data-url="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" data-title="Intel VT x64 EPT Hook框架的实现"><i class="fab fa-hacker-news fa-fw"></i></a><a href="javascript:void(0);" title="Share on Line" data-sharer="line" data-url="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" data-title="Intel VT x64 EPT Hook框架的实现"><i data-svg-src="/lib/simple-icons/icons/line.min.svg"></i></a><a href="javascript:void(0);" title="Share on 微博" data-sharer="weibo" data-url="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" data-title="Intel VT x64 EPT Hook框架的实现"><i class="fab fa-weibo fa-fw"></i></a></span>
+                <span><a href="javascript:void(0);" title="Share on Twitter" data-sharer="twitter" data-url="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0.zh-cn/" data-title="Intel VT x64 EPT Hook框架的实现" data-via="realDonaldTrump" data-hashtags="Kernel,VT"><i class="fab fa-twitter fa-fw"></i></a><a href="javascript:void(0);" title="Share on Facebook" data-sharer="facebook" data-url="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0.zh-cn/" data-hashtag="Kernel"><i class="fab fa-facebook-square fa-fw"></i></a><a href="javascript:void(0);" title="Share on Hacker News" data-sharer="hackernews" data-url="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0.zh-cn/" data-title="Intel VT x64 EPT Hook框架的实现"><i class="fab fa-hacker-news fa-fw"></i></a><a href="javascript:void(0);" title="Share on Line" data-sharer="line" data-url="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0.zh-cn/" data-title="Intel VT x64 EPT Hook框架的实现"><i data-svg-src="/lib/simple-icons/icons/line.min.svg"></i></a><a href="javascript:void(0);" title="Share on 微博" data-sharer="weibo" data-url="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0.zh-cn/" data-title="Intel VT x64 EPT Hook框架的实现"><i class="fab fa-weibo fa-fw"></i></a></span>
             </div>
         </div>
     </div>
@@ -632,7 +628,7 @@ IA32_MTRR_PHYSMASK_REGISTER MSR寄存器可以获取对应物理内存的范围�
     </div>
 
     <div class="post-nav"><a href="/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" class="prev" rel="prev" title="x64的一些特性"><i class="fas fa-angle-left fa-fw"></i>x64的一些特性</a>
-            <a href="/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/" class="next" rel="next" title="x86与x64栈回溯">x86与x64栈回溯<i class="fas fa-angle-right fa-fw"></i></a></div>
+            <a href="/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" class="next" rel="next" title="Intel VT x64 EPT Hook框架的实现">Intel VT x64 EPT Hook框架的实现<i class="fas fa-angle-right fa-fw"></i></a></div>
 </div>
 </article></div>
             </main><footer class="footer">

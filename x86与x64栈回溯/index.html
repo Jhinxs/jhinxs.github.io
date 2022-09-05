@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>x86与x64栈回溯 - Jhin&#39;s Story</title><meta name="Description" content="Jhinxs"><meta property="og:title" content="x86与x64栈回溯" />
+<meta property="og:description" content="x86 Call Stack 在x86下，一般函数的调用栈帧的结构大概如下:
+
+在管理栈空间中，最主要的两个寄存器分别为EBP以及ESP,EBP表示为当前函数栈的开始，也就是栈底，而ESP则用于提升栈空间，表示为栈顶。
+1 2 3 4 5 6 7 8 9 10 11  void add() { printf(&#34;test&#34;); } void test() { int c = 1; int b = 2; add(); }   反汇编上述代码我们大致可以看到类似如下的汇编语句:
+1 2 3 4 5 6 7 8 9 10  push ebp mov ebp,esp sub esp,xxxH mov dword ptr [ebp-4h],1 mov dword ptr [ebp-8h],2 call add add esp,xxxH mov esp,ebp pop ebp ret   结合上图不难看出，在x86下，通过EBP可以寻址当前函数体内的局部变量，函数参数，也可以找到函数返回地址，父函数的栈空间，例如：EBP-XXXH 通常表示当前函数内的局部变量，EBP&#43;4 的位置则是返回地址，EBP&#43;8 的位置可能是函数的参数。如此一来，不难看出通过EBP加正数偏移可以引用父函数的地址空间，加负数偏移可以引用当前函数的地址空间。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/" /><meta property="og:image" content="https://jhinxs.com/images/jhin.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-05-22T09:32:15+08:00" />
+<meta property="article:modified_time" content="2022-05-22T09:32:15+08:00" />
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://jhinxs.com/images/jhin.png"/>
+
+<meta name="twitter:title" content="x86与x64栈回溯"/>
+<meta name="twitter:description" content="x86 Call Stack 在x86下，一般函数的调用栈帧的结构大概如下:
+
+在管理栈空间中，最主要的两个寄存器分别为EBP以及ESP,EBP表示为当前函数栈的开始，也就是栈底，而ESP则用于提升栈空间，表示为栈顶。
+1 2 3 4 5 6 7 8 9 10 11  void add() { printf(&#34;test&#34;); } void test() { int c = 1; int b = 2; add(); }   反汇编上述代码我们大致可以看到类似如下的汇编语句:
+1 2 3 4 5 6 7 8 9 10  push ebp mov ebp,esp sub esp,xxxH mov dword ptr [ebp-4h],1 mov dword ptr [ebp-8h],2 call add add esp,xxxH mov esp,ebp pop ebp ret   结合上图不难看出，在x86下，通过EBP可以寻址当前函数体内的局部变量，函数参数，也可以找到函数返回地址，父函数的栈空间，例如：EBP-XXXH 通常表示当前函数内的局部变量，EBP&#43;4 的位置则是返回地址，EBP&#43;8 的位置可能是函数的参数。如此一来，不难看出通过EBP加正数偏移可以引用父函数的地址空间，加负数偏移可以引用当前函数的地址空间。"/>
+<meta name="application-name" content="LoveIt">
+<meta name="apple-mobile-web-app-title" content="LoveIt"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/" /><link rel="prev" href="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"><link rel="stylesheet" href="/lib/animate/animate.min.css"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "x86与x64栈回溯",
+        "inLanguage": "en",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/jhinxs.com\/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF\/"
+        },"image": ["https:\/\/jhinxs.com\/jhin.png"],"genre": "posts","keywords": "OS","wordcount":  1472 ,
+        "url": "https:\/\/jhinxs.com\/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF\/","datePublished": "2022-05-22T09:32:15+08:00","dateModified": "2022-05-22T09:32:15+08:00","license": "jhinxs story","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/jhinxs.com\/jhin.png"},"author": {
+                "@type": "Person",
+                "name": "jhinxs"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="fixed" header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="Jhin&#39;s Story"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw'></i></span>Jhinxs</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> Posts </a><a class="menu-item" href="/tags/"> Tags </a><a class="menu-item" href="/categories/"> Categories </a><a class="menu-item" href="/about/"> About </a><a class="menu-item" href="https://github.com/Jhinxs" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw'></i>  </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item language" title="Select Language">English<i class="fas fa-chevron-right fa-fw"></i>
+                        <select class="language-select" id="language-select-desktop" onchange="location = this.value;"><option value="/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/" selected>English</option></select>
+                    </a><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="Search titles or contents..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="Search">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="Clear">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="Switch Theme">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="Jhin&#39;s Story"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw'></i></span>Jhinxs</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="Search titles or contents..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="Search">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="Clear">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        Cancel
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">Posts</a><a class="menu-item" href="/tags/" title="">Tags</a><a class="menu-item" href="/categories/" title="">Categories</a><a class="menu-item" href="/about/" title="">About</a><a class="menu-item" href="https://github.com/Jhinxs" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw'></i></a><a href="javascript:void(0);" class="menu-item theme-switch" title="Switch Theme">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a><a href="javascript:void(0);" class="menu-item" title="Select Language">English<i class="fas fa-chevron-right fa-fw"></i>
+                    <select class="language-select" onchange="location = this.value;"><option value="/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/" selected>English</option></select>
+                </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">Contents</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">x86与x64栈回溯</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-category">included in <a href="/categories/windows-os/"><i class="far fa-folder fa-fw"></i>Windows OS</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2022-05-22">2022-05-22</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;1472 words&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;7 minutes&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>Contents</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#x86-call-stack">x86 Call Stack</a>
+      <ul>
+        <li><a href="#x86-模拟栈回溯">x86 模拟栈回溯</a></li>
+        <li><a href="#thread-stack-spoof">Thread Stack Spoof</a></li>
+      </ul>
+    </li>
+    <li><a href="#x64-call-stack">x64 Call Stack</a>
+      <ul>
+        <li><a href="#x64-栈回溯">x64 栈回溯</a>
+          <ul>
+            <li><a href="#runtime_function">Runtime_Function</a></li>
+            <li><a href="#unwind_info">Unwind_Info</a></li>
+          </ul>
+        </li>
+        <li><a href="#回溯调用栈">回溯调用栈</a></li>
+        <li><a href="#代码模拟x64栈回溯">代码模拟x64栈回溯</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h2 id="x86-call-stack">x86 Call Stack</h2>
+<p>在x86下，一般函数的调用栈帧的结构大概如下:</p>
+<p><a href="/images/assets/post4/x86frame.PNG" rel=""><img src="/images/assets/post4/x86frame.PNG" width="80%"/></a><br>
+在管理栈空间中，最主要的两个寄存器分别为EBP以及ESP,EBP表示为当前函数栈的开始，也就是栈底，而ESP则用于提升栈空间，表示为栈顶。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++"><span class="kt">void</span> <span class="nf">add</span><span class="p">()</span>
+<span class="p">{</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">&#34;test&#34;</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="kt">void</span> <span class="nf">test</span><span class="p">()</span> 
+<span class="p">{</span>
+	<span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+	<span class="n">add</span><span class="p">();</span>
+<span class="p">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>反汇编上述代码我们大致可以看到类似如下的汇编语句:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm">   <span class="nf">push</span> <span class="no">ebp</span>
+   <span class="nf">mov</span> <span class="no">ebp</span><span class="p">,</span><span class="no">esp</span>
+   <span class="nf">sub</span> <span class="no">esp</span><span class="p">,</span><span class="no">xxxH</span>
+   <span class="nf">mov</span> <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">ebp-4h</span><span class="p">],</span><span class="mi">1</span>
+   <span class="nf">mov</span> <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">ebp-8h</span><span class="p">],</span><span class="mi">2</span>
+   <span class="nf">call</span> <span class="no">add</span>
+   <span class="nf">add</span> <span class="no">esp</span><span class="p">,</span><span class="no">xxxH</span>
+   <span class="nf">mov</span> <span class="no">esp</span><span class="p">,</span><span class="no">ebp</span>
+   <span class="nf">pop</span> <span class="no">ebp</span>
+   <span class="nf">ret</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>结合上图不难看出，在x86下，通过EBP可以寻址当前函数体内的局部变量，函数参数，也可以找到函数返回地址，父函数的栈空间，例如：EBP-XXXH 通常表示当前函数内的局部变量，EBP+4 的位置则是返回地址，EBP+8 的位置可能是函数的参数。如此一来，不难看出通过EBP加正数偏移可以引用父函数的地址空间，加负数偏移可以引用当前函数的地址空间。<br>
+进入函数内首先保存了旧的EBP，所以当前EBP所指向的4字节内存单元保存的就是父函数的EBP,同样的可以根据此EBP找到其返回地址等信息，然后依次向上遍历，直到当前线程的最顶层的函数位置，这也就是基本的栈回溯过程。</p>
+<h3 id="x86-模拟栈回溯">x86 模拟栈回溯</h3>
+<p>微软提供了API <a href="https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-stackwalk64" target="_blank" rel="noopener noreffer">stackwalk64</a> 可以帮我们实现类似的功能.
+其内部实现原理可以参考:<a href="https://bbs.pediy.com/thread-268872.htm" target="_blank" rel="noopener noreffer">StackWalk64栈回溯原理解析</a><br>
+借此我们可以实现一个简单的栈回溯过程：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++">	<span class="n">CONTEXT</span> <span class="n">context</span> <span class="o">=</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">};</span>
+	<span class="n">context</span><span class="p">.</span><span class="n">ContextFlags</span> <span class="o">=</span> <span class="n">CONTEXT_ALL</span><span class="p">;</span>
+	<span class="n">GetThreadContext</span><span class="p">(</span><span class="kr">thread</span><span class="p">,</span><span class="o">&amp;</span><span class="n">context</span><span class="p">);</span>
+	<span class="n">STACKFRAME64</span> <span class="n">stackframe</span> <span class="o">=</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">};</span>
+	<span class="n">stackframe</span><span class="p">.</span><span class="n">AddrPC</span><span class="p">.</span><span class="n">Offset</span> <span class="o">=</span> <span class="n">context</span><span class="p">.</span><span class="n">Eip</span><span class="p">;</span>
+	<span class="n">stackframe</span><span class="p">.</span><span class="n">AddrPC</span><span class="p">.</span><span class="n">Mode</span> <span class="o">=</span> <span class="n">AddrModeFlat</span><span class="p">;</span>
+	<span class="n">stackframe</span><span class="p">.</span><span class="n">AddrFrame</span><span class="p">.</span><span class="n">Offset</span> <span class="o">=</span> <span class="n">context</span><span class="p">.</span><span class="n">Ebp</span><span class="p">;</span>
+	<span class="n">stackframe</span><span class="p">.</span><span class="n">AddrFrame</span><span class="p">.</span><span class="n">Mode</span> <span class="o">=</span> <span class="n">AddrModeFlat</span><span class="p">;</span>
+	<span class="n">stackframe</span><span class="p">.</span><span class="n">AddrStack</span><span class="p">.</span><span class="n">Offset</span> <span class="o">=</span> <span class="n">context</span><span class="p">.</span><span class="n">Esp</span><span class="p">;</span>
+	<span class="n">stackframe</span><span class="p">.</span><span class="n">AddrStack</span><span class="p">.</span><span class="n">Mode</span> <span class="o">=</span> <span class="n">AddrModeFlat</span><span class="p">;</span>
+	<span class="n">stackframe</span><span class="p">.</span><span class="n">AddrReturn</span><span class="p">.</span><span class="n">Offset</span> <span class="o">=</span> <span class="n">context</span><span class="p">.</span><span class="n">Eax</span><span class="p">;</span>
+	<span class="n">stackframe</span><span class="p">.</span><span class="n">AddrStack</span><span class="p">.</span><span class="n">Mode</span> <span class="o">=</span> <span class="n">AddrModeFlat</span><span class="p">;</span>
+	<span class="k">while</span> <span class="p">(</span><span class="nb">true</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="kt">bool</span> <span class="n">res</span> <span class="o">=</span> <span class="n">StackWalk64</span><span class="p">(</span><span class="n">IMAGE_FILE_MACHINE_I386</span><span class="p">,</span>
+			<span class="n">GetCurrentProcess</span><span class="p">(),</span>
+			<span class="kr">thread</span><span class="p">,</span>
+			<span class="o">&amp;</span><span class="n">stackframe</span><span class="p">,</span>
+			<span class="o">&amp;</span><span class="n">context</span><span class="p">,</span>
+			<span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+		<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">res</span><span class="p">)</span>
+		<span class="p">{</span>
+			<span class="k">break</span><span class="p">;</span>
+		<span class="p">}</span>
+		<span class="n">printf</span><span class="p">(</span><span class="s">&#34;ESP:%x &#34;</span><span class="p">,</span> <span class="n">stackframe</span><span class="p">.</span><span class="n">AddrStack</span><span class="p">.</span><span class="n">Offset</span><span class="p">);</span>
+		<span class="n">printf</span><span class="p">(</span><span class="s">&#34;EBP:%x &#34;</span><span class="p">,</span> <span class="n">stackframe</span><span class="p">.</span><span class="n">AddrFrame</span><span class="p">.</span><span class="n">Offset</span><span class="p">);</span>
+		<span class="n">printf</span><span class="p">(</span><span class="s">&#34;RET:%x</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">stackframe</span><span class="p">.</span><span class="n">AddrReturn</span><span class="p">.</span><span class="n">Offset</span><span class="p">);</span>
+	<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="thread-stack-spoof">Thread Stack Spoof</h3>
+<p>这里有两个比较好的项目:https://github.com/mgeeky/ThreadStackSpoofer 以及 <a href="https://github.com/countercept/CallStackSpoofer" target="_blank" rel="noopener noreffer">https://github.com/countercept/CallStackSpoofer</a>
+终端安全防御产品对基于进程以及线程的创建时检测已经不是什么新鲜事了，或者又如一些验证性开源项目：https://github.com/huoji120/DuckMemoryScan
+安全防御产品可以检测线程的创建，并对线程做栈回溯，对其所在的内存区域做扫描查杀获取做一些其他的检测</p>
+<p>其实可以看到，栈回溯的过程中一旦某个函数栈发生断裂，那么对于该线程的栈回溯就无法完成，所以就可以对如返回地址等影响栈回溯的地方做手脚，干扰检测
+x86函数的返回地址一般是EBP + 4的位置，所以我们可以构造一个假的返回地址.<br>
+我们通过RtlCaptureContext捕获线程当前上下文的信息（父函数的寄存器现场），得到EBP从而修改返回地址</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++">	<span class="n">CONTEXT</span> <span class="n">context</span> <span class="o">=</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">};</span>
+	<span class="n">context</span><span class="p">.</span><span class="n">ContextFlags</span> <span class="o">=</span> <span class="n">CONTEXT_ALL</span><span class="p">;</span>
+	<span class="n">RtlCaptureContext</span><span class="p">(</span><span class="o">&amp;</span><span class="n">context</span><span class="p">);</span>
+	<span class="n">ULONG_PTR</span> <span class="n">ret</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">int</span><span class="o">*</span><span class="p">)(</span><span class="n">context</span><span class="p">.</span><span class="n">Ebp</span> <span class="o">+</span> <span class="mi">4</span><span class="p">);</span>  <span class="c1">//正确的返回地址
+</span><span class="c1"></span>	<span class="o">*</span><span class="p">(</span><span class="kt">int</span><span class="o">*</span><span class="p">)(</span><span class="n">context</span><span class="p">.</span><span class="n">Ebp</span> <span class="o">+</span> <span class="mi">4</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>              <span class="c1">//修改返回地址
+</span></code></pre></td></tr></table>
+</div>
+</div><p>我们通过windbg可以看到修改后的效果:<br>
+<a href="/images/assets/post4/realret.PNG" rel=""><img src="/images/assets/post4/realret.PNG" width="60%"/></a><br>
+<a href="/images/assets/post4/fakeret.PNG" rel=""><img src="/images/assets/post4/fakeret.PNG" width="60%"/></a></p>
+<p>当然直接断开调用栈，程序运行肯定出错，这就需要你适时的恢复正确的调用栈。</p>
+<h2 id="x64-call-stack">x64 Call Stack</h2>
+<p>在x64中，RBP不再充当栈帧（栈底）寄存器，栈顶以及栈底全部经由RSP寄存器充当。
+以上述test函数为例，再debug以及release版本中，反汇编大概如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm"><span class="nl">Debug:</span>
+        <span class="nf">push</span>    <span class="no">rbp</span>
+        <span class="nf">push</span>    <span class="no">rdi</span>
+        <span class="nf">sub</span>     <span class="no">rsp</span><span class="p">,</span><span class="mi">128</span><span class="no">h</span>
+        <span class="nf">lea</span>     <span class="no">rbp</span><span class="p">,[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">20</span><span class="no">h</span><span class="p">]</span>
+        <span class="nf">mov</span>     <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">rbp</span><span class="err">+</span><span class="mi">4</span><span class="p">],</span><span class="mi">1</span>
+        <span class="nf">mov</span>     <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">rbp</span><span class="err">+</span><span class="mi">24</span><span class="no">h</span><span class="p">],</span><span class="mi">2</span>
+        <span class="nf">call</span>    <span class="no">ctest</span><span class="p">!</span><span class="no">add</span>
+        <span class="nf">lea</span>     <span class="no">rsp</span><span class="p">,[</span><span class="no">rbp</span><span class="err">+</span><span class="mi">108</span><span class="no">h</span><span class="p">]</span>
+        <span class="nf">pop</span>     <span class="no">rdi</span>
+        <span class="nf">pop</span>     <span class="no">rbp</span>
+        <span class="nf">ret</span>
+
+<span class="nl">Release:</span>
+
+        <span class="nf">sub</span>     <span class="no">rsp</span><span class="p">,</span><span class="mi">38</span><span class="no">h</span>
+        <span class="nf">mov</span>     <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">20</span><span class="no">h</span><span class="p">],</span><span class="mi">1</span>
+        <span class="nf">mov</span>     <span class="no">dword</span> <span class="no">ptr</span> <span class="p">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">24</span><span class="no">h</span><span class="p">],</span><span class="mi">2</span>
+        <span class="nf">call</span>    <span class="no">ctest</span><span class="p">!</span><span class="no">add</span>
+        <span class="nf">add</span>     <span class="no">rsp</span><span class="p">,</span><span class="mi">38</span><span class="no">h</span>
+        <span class="nf">ret</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>再debug中RBP只作为了普通的非易失寄存器压栈保留，其中mov dword ptr [rbp+4],1 类似代码看起来像是再通过RBP寻址，其实归根还是通过RSP，rbp只是作为RSP临时开辟堆栈空间后的一个基准，也是便于调试分析，而在release版本中，开启了优化，直接能更清晰的看到通过RSP进行的栈空间访问。</p>
+<h3 id="x64-栈回溯">x64 栈回溯</h3>
+<p>在学习x64栈回溯之前，需要先了解Runtime_Function,Unwind_Info,Unwind_Code等概念。<br>
+64位的PE结构中多了一个.pdata段，静态存贮异常处理信息的地方，其中有大量的Runtime_Function<br>
+<a href="/images/assets/post4/pdata.PNG" rel=""><img src="/images/assets/post4/pdata.PNG" width="70%"/></a></p>
+<h4 id="runtime_function">Runtime_Function</h4>
+<p>每个非叶函数都包含一个与之对应的Runtime_Function结构体（叶函数就是不会调用其他函数的函数）<br>
+Runtime_Function结构体构成 <a href="https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-runtime_function" target="_blank" rel="noopener noreffer">MSDN</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++"><span class="k">typedef</span> <span class="k">struct</span> <span class="nc">_IMAGE_RUNTIME_FUNCTION_ENTRY</span> <span class="p">{</span>
+  <span class="n">DWORD</span> <span class="n">BeginAddress</span><span class="p">;</span>
+  <span class="n">DWORD</span> <span class="n">EndAddress</span><span class="p">;</span>
+  <span class="k">union</span> <span class="p">{</span>
+    <span class="n">DWORD</span> <span class="n">UnwindInfoAddress</span><span class="p">;</span>
+    <span class="n">DWORD</span> <span class="n">UnwindData</span><span class="p">;</span>
+  <span class="p">}</span> <span class="n">DUMMYUNIONNAME</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">RUNTIME_FUNCTION</span><span class="p">,</span> <span class="o">*</span><span class="n">PRUNTIME_FUNCTION</span><span class="p">,</span> <span class="n">_IMAGE_RUNTIME_FUNCTION_ENTRY</span><span class="p">,</span> <span class="o">*</span><span class="n">_PIMAGE_RUNTIME_FUNCTION_ENTRY</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>其中BeginAddress和EndAddress分别表示函数开始地址与结束地址的RVA,而UnwindInfoAddress则是一个指向Unwind_Info结构体的地址。
+我们可以使用windbg查看函数对应的Runtime_Function信息:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-h" data-lang="h"><span class="mi">0</span><span class="o">:</span><span class="mo">001</span><span class="o">&gt;</span> <span class="p">.</span><span class="n">fnent</span> <span class="n">ctest</span><span class="o">!</span><span class="n">main</span>
+<span class="n">Debugger</span> <span class="n">function</span> <span class="n">entry</span> <span class="mo">000002</span><span class="mi">93</span><span class="err">`</span><span class="n">c6462c20</span> <span class="k">for</span><span class="o">:</span>
+<span class="n">Exact</span> <span class="nl">matches</span><span class="p">:</span>
+    <span class="n">ctest</span><span class="o">!</span><span class="n">main</span> <span class="p">(</span><span class="kt">int</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="p">)</span>
+
+<span class="n">BeginAddress</span>      <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">000010</span><span class="n">b0</span>
+<span class="n">EndAddress</span>        <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mf">000010e1</span>
+<span class="n">UnwindInfoAddress</span> <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">0001</span><span class="n">caa8</span>
+
+<span class="n">Unwind</span> <span class="n">info</span> <span class="n">at</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="n">b0f1caa8</span><span class="p">,</span> <span class="mi">6</span> <span class="n">bytes</span>
+  <span class="n">version</span> <span class="mi">1</span><span class="p">,</span> <span class="n">flags</span> <span class="mi">0</span><span class="p">,</span> <span class="n">prolog</span> <span class="n">d</span><span class="p">,</span> <span class="n">codes</span> <span class="mi">1</span>
+  <span class="mo">00</span><span class="o">:</span> <span class="n">offs</span> <span class="n">d</span><span class="p">,</span> <span class="n">unwind</span> <span class="n">op</span> <span class="mi">2</span><span class="p">,</span> <span class="n">op</span> <span class="n">info</span> <span class="mi">4</span>	<span class="n">UWOP_ALLOC_SMALL</span><span class="p">.</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>通过BeginAddress我们可以得到main函数的起始地址:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-h" data-lang="h"><span class="mi">0</span><span class="o">:</span><span class="mo">001</span><span class="o">&gt;</span> <span class="n">lm</span>
+<span class="n">start</span>             <span class="n">end</span>                 <span class="n">module</span> <span class="n">name</span>
+<span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="n">b0f00000</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="n">b0f26000</span>   <span class="n">ctest</span>    <span class="n">C</span> <span class="p">(</span><span class="n">private</span> <span class="n">pdb</span> <span class="n">symbols</span><span class="p">)</span>  
+<span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e060000</span> <span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e32</span><span class="n">d000</span>   <span class="n">KERNELBASE</span>   <span class="p">(</span><span class="n">deferred</span><span class="p">)</span>             
+<span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8f</span><span class="mi">5</span><span class="n">b0000</span> <span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8f</span><span class="mi">66</span><span class="n">d000</span>   <span class="n">KERNEL32</span>   <span class="p">(</span><span class="n">pdb</span> <span class="n">symbols</span><span class="p">)</span>         
+<span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mi">908</span><span class="n">d0000</span> <span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mi">90</span><span class="n">ac7000</span>   <span class="n">ntdll</span>      <span class="p">(</span><span class="n">pdb</span> <span class="n">symbols</span><span class="p">)</span>          
+<span class="mi">0</span><span class="o">:</span><span class="mo">001</span><span class="o">&gt;</span> <span class="o">?</span><span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="n">b0f00000</span><span class="o">+</span><span class="mo">00000000</span><span class="err">`</span><span class="mo">000010</span><span class="n">b0</span>
+<span class="n">Evaluate</span> <span class="nl">expression</span><span class="p">:</span> <span class="mi">140701802172592</span> <span class="o">=</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="n">b0f010b0</span>
+<span class="mi">0</span><span class="o">:</span><span class="mo">001</span><span class="o">&gt;</span> <span class="n">u</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="n">b0f010b0</span>
+<span class="n">ctest</span><span class="o">!</span><span class="nl">main</span><span class="p">:</span>
+<span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="n">b0f010b0</span> <span class="mi">4889542410</span>      <span class="n">mov</span>     <span class="n">qword</span> <span class="n">ptr</span> <span class="p">[</span><span class="n">rsp</span><span class="o">+</span><span class="mi">10</span><span class="n">h</span><span class="p">],</span><span class="n">rdx</span>
+<span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="n">b0f010b5</span> <span class="mi">894</span><span class="n">c2408</span>        <span class="n">mov</span>     <span class="n">dword</span> <span class="n">ptr</span> <span class="p">[</span><span class="n">rsp</span><span class="o">+</span><span class="mi">8</span><span class="p">],</span><span class="n">ecx</span>
+<span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="n">b0f010b9</span> <span class="mi">4883</span><span class="n">ec28</span>        <span class="n">sub</span>     <span class="n">rsp</span><span class="p">,</span><span class="mi">28</span><span class="n">h</span>
+<span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="n">b0f010bd</span> <span class="n">e86effffff</span>      <span class="n">call</span>    <span class="n">ctest</span><span class="o">!</span><span class="n">test</span> <span class="p">(</span><span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="n">b0f01030</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="unwind_info">Unwind_Info</h4>
+<p>而Unwind_Info则相对要复杂一些 <a href="https://docs.microsoft.com/en-us/cpp/build/exception-handling-x64?view=msvc-170" target="_blank" rel="noopener noreffer">MSDN</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++"><span class="k">typedef</span> <span class="k">union</span> <span class="nc">_UNWIND_CODE</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="p">{</span>
+        <span class="n">UBYTE</span> <span class="n">Offset</span><span class="p">;</span>
+        <span class="n">UBYTE</span> <span class="nl">UnwindOp</span> <span class="p">:</span><span class="mi">4</span>
+        <span class="n">UBYTE</span> <span class="nl">OpInfo</span>   <span class="p">:</span><span class="mi">4</span>
+    <span class="p">};</span>
+    <span class="n">USHORT</span> <span class="n">FrameOffset</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">UNWIND_CODE</span><span class="p">,</span> <span class="o">*</span><span class="n">PUNWIND_CODE</span><span class="p">;</span>
+
+<span class="k">typedef</span> <span class="k">struct</span> <span class="nc">_UNWIND_INFO</span> <span class="p">{</span>
+    <span class="n">UBYTE</span> <span class="nl">Version</span>       <span class="p">:</span><span class="mi">3</span>
+    <span class="n">UBYTE</span> <span class="nl">Flags</span>         <span class="p">:</span><span class="mi">5</span>
+    <span class="n">UBYTE</span> <span class="n">SizeOfProlog</span><span class="p">;</span>
+    <span class="n">UBYTE</span> <span class="n">CountOfCodes</span><span class="p">;</span>
+    <span class="n">UBYTE</span> <span class="nl">FrameRegister</span> <span class="p">:</span><span class="mi">4</span>
+    <span class="n">UBYTE</span> <span class="nl">FrameOffset</span>   <span class="p">:</span><span class="mi">4</span>
+    <span class="n">UNWIND_CODE</span> <span class="n">UnwindCode</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="p">}</span> <span class="n">UNWIND_INFO</span><span class="p">,</span> <span class="o">*</span><span class="n">PUNWIND_INFO</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>比较关键的字段flags代表的意义如下：</p>
+<ul>
+<li>UNW_FLAG_NHANDLER 0x0  不处理异常，或者没有异常处理函数都为此值</li>
+<li>UNW_FLAG_EHANDLER 0x01 当寻找需要检查异常的函数时, 函数需要调用该异常处理程序，也就是通过except进行处理。</li>
+<li>UNW_FLAG_UHANDLER 0x02 当展开一个异常时，函数应调用该终止处理程序，也就是通过finally函数处理。</li>
+<li>UNW_FLAG_CHAININFO 0x04 使用调用链，具体可以看MSDN。</li>
+</ul>
+<p>然后是prolog字段，详细可以看 <a href="https://docs.microsoft.com/en-us/cpp/build/prolog-and-epilog?view=msvc-170&amp;viewFallbackFrom=vs-2019" target="_blank" rel="noopener noreffer">MSDN</a>
+简单来说，调用其他函数、或使用异常处理的指令之前的代码就是prolog，做一些保存非易失寄存器，为局部变量分配临时的空间等操作，它的大小为从函数起始地址算起，这里的prolog字段代表了prolog大小为0XD也就是13个字节。<br>
+<a href="/images/assets/post4/prolog.PNG" rel=""><img src="/images/assets/post4/prolog.PNG" width="80%"/></a><br>
+然后是codes（Count of unwind codes）代表unwind_code的个数。我们这里是1，代表只有一个unwind_code。<br>
+接下里UNWIND_CODE，UNWIND_CODE中的信息包含了非易失寄存器的数量，以及栈上的局部变量和参数信息，可以理解为通过UNWIND_CODE，你可以知道，当前函数内，对栈做的操作，从而知道对栈改变的具体大小，常见的unwind_code：</p>
+<ul>
+<li>UWOP_PUSH_NONVOL(0) 将非易失寄存器压栈（push RBX）</li>
+<li>UWOP_SAVE_NONVOL(4) 将非易失寄存器保存在栈上(mov qword ptr [RSP+XXH],RBX)</li>
+<li>UWOP_ALLOC_LARGE(1) 在栈上分配大空间，最大为4GB</li>
+<li>UWOP_ALLOC_SMALL(2) 在栈上分配小空间，8~123 bytes</li>
+</ul>
+<p>在windbg中我们可以看到unwind op 2, op info 4,做了UWOP_ALLOC_SMALL操作，分配大小为op info field * 8 + 8，也就是40=28H，对应我们的sub rsp,28h，op info的意义对应于不同的unwind op，具体可看前面的MSDN文档。<br>
+而在IDA中，找到对应的unwind_info信息:<br>
+<a href="/images/assets/post4/unwindinfo.PNG" rel=""><img src="/images/assets/post4/unwindinfo.PNG" width="100%"/></a><br>
+对应与前面的结构体42h=0100 0010 -&gt;4 2,unwind op 2, op info 4。IDA也标记为UWOP_ALLOC_SMALL<br>
+接下来，我们构造一个简单的除0异常：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++">	<span class="kr">__try</span> 
+	<span class="p">{</span>
+		<span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+		<span class="kt">int</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span> <span class="o">/</span> <span class="n">a</span><span class="p">;</span>
+	<span class="p">}</span>
+	<span class="kr">__except</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> 
+	<span class="p">{</span>
+		<span class="n">printf</span><span class="p">(</span><span class="s">&#34;Error</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+	<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><a href="/images/assets/post4/unwindinfo2.PNG" rel=""><img src="/images/assets/post4/unwindinfo2.PNG" width="100%"/></a><br>
+此时UNWIND_INFO变成了9 0000 1001-&gt; version 1,flags-&gt;1,此时需要异常处理函数处理。<br>
+dd rva __C_specific_handler 这一行就是__C_specific_handler函数的rva值，关于此函数 <a href="https://docs.microsoft.com/en-us/windows/win32/devnotes/--c-specific-handler2" target="_blank" rel="noopener noreffer">__C_specific_handler</a> 
+接下来是一个C_SCOPE_TABLE的一个结构体</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++"><span class="k">typedef</span> <span class="k">struct</span> <span class="nc">_SCOPE_TABLE</span> <span class="p">{</span>
+ <span class="n">ULONG</span> <span class="n">Count</span><span class="p">;</span>
+ <span class="k">struct</span>
+ <span class="p">{</span>
+     <span class="n">ULONG</span> <span class="n">BeginAddress</span><span class="p">;</span>
+     <span class="n">ULONG</span> <span class="n">EndAddress</span><span class="p">;</span>
+     <span class="n">ULONG</span> <span class="n">HandlerAddress</span><span class="p">;</span>
+     <span class="n">ULONG</span> <span class="n">JumpTarget</span><span class="p">;</span>
+ <span class="p">}</span> <span class="n">ScopeRecord</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="p">}</span> <span class="n">SCOPE_TABLE</span><span class="p">,</span> <span class="o">*</span><span class="n">PSCOPE_TABLE</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>IDA中的4个RVA分别对应以上的4个字段，其中BeginAddress以及EndAddress表示了try代码块的范围
+<a href="/images/assets/post4/try.PNG" rel=""><img src="/images/assets/post4/try.PNG" width="80%"/></a><br>
+HandlerAddress则表示了except_filter函数RVA，JumpTarget则表示except异常处理函数RVA,我这里filter用1表示使用当前except异常处理函数处理，编译器自动生成了一个filter函数体。<br>
+<a href="/images/assets/post4/filter.PNG" rel=""><img src="/images/assets/post4/filter.PNG" width="80%"/></a></p>
+<h3 id="回溯调用栈">回溯调用栈</h3>
+<p>根据对RUNTIME_FUNCTION以及UNWIND_INFO的分析，我们可以得到每个函数的栈帧的空间，也就是得到子函数的RSP我们就可以推算出父函数的堆栈空间。<br>
+例如windbg如下的调用栈:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-h" data-lang="h"><span class="mi">0</span><span class="o">:</span><span class="mo">000</span><span class="o">&gt;</span> <span class="n">knf</span>
+ <span class="cp">#   Memory  Child-SP          RetAddr               Call Site
+</span><span class="cp"></span><span class="mo">00</span>           <span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fca8</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">25611009</span>     <span class="n">ctest</span><span class="o">!</span><span class="n">sub</span>
+<span class="mo">01</span>         <span class="mi">8</span> <span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fcb0</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">25611049</span>     <span class="n">ctest</span><span class="o">!</span><span class="n">add</span><span class="o">+</span><span class="mh">0x9</span>  
+<span class="mo">02</span>        <span class="mi">30</span> <span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fce0</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">256110</span><span class="n">c2</span>     <span class="n">ctest</span><span class="o">!</span><span class="n">test</span><span class="o">+</span><span class="mh">0x19</span>  
+<span class="mo">03</span>        <span class="mi">40</span> <span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd20</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">25611400</span>     <span class="n">ctest</span><span class="o">!</span><span class="n">main</span><span class="o">+</span><span class="mh">0x12</span>  
+<span class="mo">04</span>        <span class="mi">30</span> <span class="p">(</span><span class="n">Inline</span> <span class="n">Function</span><span class="p">)</span> <span class="o">--------</span><span class="err">`</span><span class="o">--------</span>     <span class="n">ctest</span><span class="o">!</span><span class="n">invoke_main</span><span class="o">+</span><span class="mh">0x22</span> 
+<span class="p">...........</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>Child-SP表示子函数初始化完成后的RSP状态值，例如这里add函数调用sub，会有sub RSP,xxxH,CALL SUB这个过程，Child-SP就表示Call之前的RSP，也就是当前函数的初始RSP。（任何还未展开的函数，在windbg中memory显示为空，下一行的8因为压入了返回值占用8个字节） <br>
+这里add函数RSP为000000b7`4b16fcb0，根据X64函数的栈帧结构，栈帧的大小=返回地址（8 个字节）+不可变寄存器+局部变量+基于栈的参数+基于寄存
+器的参数（shadow space-&gt;0x20h个字节）= 返回地址（8个字节）+ unwind_code得出堆栈空间改变大小。<br>
+add函数的Unwind信息如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-h" data-lang="h"><span class="mi">0</span><span class="o">:</span><span class="mo">000</span><span class="o">&gt;</span> <span class="p">.</span><span class="n">fnent</span> <span class="n">ctest</span><span class="o">!</span><span class="n">add</span>
+<span class="n">Debugger</span> <span class="n">function</span> <span class="n">entry</span> <span class="mo">000001</span><span class="mi">96</span><span class="err">`</span><span class="mi">75</span><span class="n">b733c0</span> <span class="k">for</span><span class="o">:</span>
+<span class="n">Exact</span> <span class="nl">matches</span><span class="p">:</span>
+    <span class="n">ctest</span><span class="o">!</span><span class="n">add</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+
+<span class="n">BeginAddress</span>      <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00001000</span>
+<span class="n">EndAddress</span>        <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">0000100</span><span class="n">e</span>
+<span class="n">UnwindInfoAddress</span> <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">0001</span><span class="n">ca98</span>
+
+<span class="n">Unwind</span> <span class="n">info</span> <span class="n">at</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">2562</span><span class="n">ca98</span><span class="p">,</span> <span class="mi">6</span> <span class="n">bytes</span>
+  <span class="n">version</span> <span class="mi">1</span><span class="p">,</span> <span class="n">flags</span> <span class="mi">0</span><span class="p">,</span> <span class="n">prolog</span> <span class="mi">4</span><span class="p">,</span> <span class="n">codes</span> <span class="mi">1</span>
+  <span class="mo">00</span><span class="o">:</span> <span class="n">offs</span> <span class="mi">4</span><span class="p">,</span> <span class="n">unwind</span> <span class="n">op</span> <span class="mi">2</span><span class="p">,</span> <span class="n">op</span> <span class="n">info</span> <span class="mi">4</span>	<span class="n">UWOP_ALLOC_SMALL</span><span class="p">.</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>所以栈帧大小为8+(4*8+8)=0x30h,所以其父函数的RSP=000000b7~4b16fcb0+0x30 = 000000b7~4b16fce0,Windbg中当前函数栈帧的大小位于下一行的Memory中。
+而返回地址怎么算呢，以add函数的反汇编为例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm"><span class="err">0:000&gt;</span> <span class="nf">u</span> <span class="no">ctest</span><span class="p">!</span><span class="no">add</span>
+<span class="err">00007</span><span class="nf">ff7</span><span class="err">`</span><span class="mi">25611000</span> <span class="mi">4883</span><span class="no">ec28</span>        <span class="no">sub</span>     <span class="no">rsp</span><span class="p">,</span><span class="mi">28</span><span class="no">h</span>
+<span class="err">00007</span><span class="nf">ff7</span><span class="err">`</span><span class="mi">25611004</span> <span class="no">e807000000</span>      <span class="no">call</span>    <span class="no">ctest</span><span class="p">!</span><span class="no">sub</span> <span class="p">(</span><span class="mi">00007</span><span class="no">ff7</span><span class="err">`</span><span class="mi">25611010</span><span class="p">)</span>
+<span class="err">00007</span><span class="nf">ff7</span><span class="err">`</span><span class="mi">25611009</span> <span class="mi">4883</span><span class="no">c428</span>        <span class="no">add</span>     <span class="no">rsp</span><span class="p">,</span><span class="mi">28</span><span class="no">h</span>
+<span class="err">00007</span><span class="nf">ff7</span><span class="err">`</span><span class="mi">2561100</span><span class="no">d</span> <span class="no">c3</span>              <span class="no">ret</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>sub rsp,28h后即child-sp,因为调用call之后，会 push ret地址，所以返回地址就在child-sp+unwind_code得出堆栈空间改变大小的地址处</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-h" data-lang="h"><span class="mi">0</span><span class="o">:</span><span class="mo">000</span><span class="o">&gt;</span> <span class="p">.</span><span class="n">fnent</span> <span class="n">ctest</span><span class="o">!</span><span class="n">add</span>
+<span class="n">Debugger</span> <span class="n">function</span> <span class="n">entry</span> <span class="mo">000001</span><span class="mi">96</span><span class="err">`</span><span class="mi">75</span><span class="n">b733c0</span> <span class="k">for</span><span class="o">:</span>
+<span class="n">Exact</span> <span class="nl">matches</span><span class="p">:</span>
+    <span class="n">ctest</span><span class="o">!</span><span class="n">add</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+
+<span class="n">BeginAddress</span>      <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00001000</span>
+<span class="n">EndAddress</span>        <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">0000100</span><span class="n">e</span>
+<span class="n">UnwindInfoAddress</span> <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">0001</span><span class="n">ca98</span>
+
+<span class="n">Unwind</span> <span class="n">info</span> <span class="n">at</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">2562</span><span class="n">ca98</span><span class="p">,</span> <span class="mi">6</span> <span class="n">bytes</span>
+  <span class="n">version</span> <span class="mi">1</span><span class="p">,</span> <span class="n">flags</span> <span class="mi">0</span><span class="p">,</span> <span class="n">prolog</span> <span class="mi">4</span><span class="p">,</span> <span class="n">codes</span> <span class="mi">1</span>
+  <span class="mo">00</span><span class="o">:</span> <span class="n">offs</span> <span class="mi">4</span><span class="p">,</span> <span class="n">unwind</span> <span class="n">op</span> <span class="mi">2</span><span class="p">,</span> <span class="n">op</span> <span class="n">info</span> <span class="mi">4</span>	<span class="n">UWOP_ALLOC_SMALL</span><span class="p">.</span>
+<span class="mi">0</span><span class="o">:</span><span class="mo">000</span><span class="o">&gt;</span> <span class="n">dq</span> <span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fcb0</span><span class="o">+</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="mi">8</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fcd8</span>  <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">25611049</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000002</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fce8</span>  <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mf">256112e6</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">25624280</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fcf8</span>  <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000001</span> <span class="mo">00000002</span><span class="err">`</span><span class="mo">00000001</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd08</span>  <span class="n">bfebfbff</span><span class="err">`</span><span class="mf">7ff</span><span class="n">afbbf</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">256242</span><span class="n">c0</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd18</span>  <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">256110</span><span class="n">c2</span> <span class="mo">00000000</span><span class="err">`</span><span class="mf">0000001f</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd28</span>  <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd38</span>  <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">256242</span><span class="n">c8</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd48</span>  <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">25611400</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000001</span>
+
+
+<span class="mi">0</span><span class="o">:</span><span class="mo">000</span><span class="o">&gt;</span> <span class="p">.</span><span class="n">fnent</span> <span class="n">ctest</span><span class="o">!</span><span class="n">test</span>
+<span class="n">Debugger</span> <span class="n">function</span> <span class="n">entry</span> <span class="mo">000001</span><span class="mi">96</span><span class="err">`</span><span class="mi">75</span><span class="n">b733c0</span> <span class="k">for</span><span class="o">:</span>
+<span class="n">Exact</span> <span class="nl">matches</span><span class="p">:</span>
+    <span class="n">ctest</span><span class="o">!</span><span class="n">test</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+
+<span class="n">BeginAddress</span>      <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00001030</span>
+<span class="n">EndAddress</span>        <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">0000104</span><span class="n">e</span>
+<span class="n">UnwindInfoAddress</span> <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">0001</span><span class="n">caa0</span>
+
+<span class="n">Unwind</span> <span class="n">info</span> <span class="n">at</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">2562</span><span class="n">caa0</span><span class="p">,</span> <span class="mi">6</span> <span class="n">bytes</span>
+  <span class="n">version</span> <span class="mi">1</span><span class="p">,</span> <span class="n">flags</span> <span class="mi">0</span><span class="p">,</span> <span class="n">prolog</span> <span class="mi">4</span><span class="p">,</span> <span class="n">codes</span> <span class="mi">1</span>
+  <span class="mo">00</span><span class="o">:</span> <span class="n">offs</span> <span class="mi">4</span><span class="p">,</span> <span class="n">unwind</span> <span class="n">op</span> <span class="mi">2</span><span class="p">,</span> <span class="n">op</span> <span class="n">info</span> <span class="mi">6</span>	<span class="n">UWOP_ALLOC_SMALL</span><span class="p">.</span>
+<span class="mi">0</span><span class="o">:</span><span class="mo">000</span><span class="o">&gt;</span> <span class="n">dq</span> <span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fce0</span><span class="o">+</span><span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="mi">8</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd18</span>  <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">256110</span><span class="n">c2</span> <span class="mo">00000000</span><span class="err">`</span><span class="mf">0000001f</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd28</span>  <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd38</span>  <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">256242</span><span class="n">c8</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd48</span>  <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mi">25611400</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000001</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd58</span>  <span class="mo">000001</span><span class="n">d6</span><span class="err">`</span><span class="mi">11763150</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd68</span>  <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd78</span>  <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span>
+<span class="mo">000000</span><span class="n">b7</span><span class="err">`</span><span class="mi">4</span><span class="n">b16fd88</span>  <span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8f</span><span class="mi">5</span><span class="n">c7034</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>计算得到的结果和Windbg得到的一致。</p>
+<h3 id="代码模拟x64栈回溯">代码模拟x64栈回溯</h3>
+<p>我们可以根据上面的那些结构体信息来模拟栈回溯了，同样的Windows提供了对应的API来利用这些信息完成栈回溯。<br>
+<a href="https://docs.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-rtllookupfunctionentry" target="_blank" rel="noopener noreffer">RtlLookupFunctionEntry</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++"><span class="n">NTSYSAPI</span> <span class="n">PRUNTIME_FUNCTION</span> <span class="nf">RtlLookupFunctionEntry</span><span class="p">(</span>
+  <span class="p">[</span><span class="n">in</span><span class="p">]</span>  <span class="n">DWORD64</span>               <span class="n">ControlPc</span><span class="p">,</span>
+  <span class="p">[</span><span class="n">out</span><span class="p">]</span> <span class="n">PDWORD64</span>              <span class="n">ImageBase</span><span class="p">,</span>
+  <span class="p">[</span><span class="n">out</span><span class="p">]</span> <span class="n">PUNWIND_HISTORY_TABLE</span> <span class="n">HistoryTable</span>
+<span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><a href="https://docs.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-rtlvirtualunwind" target="_blank" rel="noopener noreffer">RtlVirtualUnwind</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++"><span class="n">NTSYSAPI</span> <span class="n">PEXCEPTION_ROUTINE</span> <span class="nf">RtlVirtualUnwind</span><span class="p">(</span>
+  <span class="p">[</span><span class="n">in</span><span class="p">]</span>                <span class="n">DWORD</span>                          <span class="n">HandlerType</span><span class="p">,</span>
+  <span class="p">[</span><span class="n">in</span><span class="p">]</span>                <span class="n">DWORD64</span>                        <span class="n">ImageBase</span><span class="p">,</span>
+  <span class="p">[</span><span class="n">in</span><span class="p">]</span>                <span class="n">DWORD64</span>                        <span class="n">ControlPc</span><span class="p">,</span>
+  <span class="p">[</span><span class="n">in</span><span class="p">]</span>                <span class="n">PRUNTIME_FUNCTION</span>              <span class="n">FunctionEntry</span><span class="p">,</span>
+  <span class="p">[</span><span class="n">in</span><span class="p">,</span> <span class="n">out</span><span class="p">]</span>           <span class="n">PCONTEXT</span>                       <span class="n">ContextRecord</span><span class="p">,</span>
+  <span class="p">[</span><span class="n">out</span><span class="p">]</span>               <span class="n">PVOID</span>                          <span class="o">*</span><span class="n">HandlerData</span><span class="p">,</span>
+  <span class="p">[</span><span class="n">out</span><span class="p">]</span>               <span class="n">PDWORD64</span>                       <span class="n">EstablisherFrame</span><span class="p">,</span>
+  <span class="p">[</span><span class="n">in</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">optional</span><span class="p">]</span> <span class="n">PKNONVOLATILE_CONTEXT_POINTERS</span> <span class="n">ContextPointers</span>
+<span class="p">);</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>简单的示例代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++"><span class="cp">#include</span> <span class="cpf">&lt;Windows.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;TlHelp32.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;winnt.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;dbghelp.h&gt;</span><span class="cp">
+</span><span class="cp">#pragma comment(lib,&#34;dbghelp.lib&#34;)
+</span><span class="cp"></span>
+<span class="kt">void</span> <span class="nf">my_StackWalk</span><span class="p">(</span><span class="n">CONTEXT</span> <span class="n">context</span><span class="p">)</span> 
+<span class="p">{</span>
+
+	<span class="n">UNWIND_HISTORY_TABLE</span> <span class="n">unwind_table</span> <span class="o">=</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">};</span>
+	<span class="n">PRUNTIME_FUNCTION</span> <span class="n">pruntime_function</span><span class="p">;</span>
+	<span class="n">DWORD64</span> <span class="n">imagebase</span><span class="p">;</span>
+	<span class="n">KNONVOLATILE_CONTEXT_POINTERS</span> <span class="n">knvcp</span> <span class="o">=</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">};</span>
+	<span class="n">PVOID</span> <span class="n">handledata</span><span class="p">;</span>
+	<span class="n">DWORD64</span> <span class="n">establishframe</span><span class="p">;</span>
+	<span class="k">for</span> <span class="p">(;;)</span>
+	<span class="p">{</span>
+		<span class="n">pruntime_function</span> <span class="o">=</span> <span class="n">RtlLookupFunctionEntry</span><span class="p">(</span><span class="n">context</span><span class="p">.</span><span class="n">Rip</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">imagebase</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">unwind_table</span><span class="p">);</span>
+
+		<span class="n">RtlVirtualUnwind</span><span class="p">(</span><span class="n">UNW_FLAG_NHANDLER</span><span class="p">,</span>
+				<span class="n">imagebase</span><span class="p">,</span>
+				<span class="n">context</span><span class="p">.</span><span class="n">Rip</span><span class="p">,</span>
+				<span class="n">pruntime_function</span><span class="p">,</span>
+				<span class="o">&amp;</span><span class="n">context</span><span class="p">,</span>
+				<span class="o">&amp;</span><span class="n">handledata</span><span class="p">,</span>
+				<span class="o">&amp;</span><span class="n">establishframe</span><span class="p">,</span>
+				<span class="o">&amp;</span><span class="n">knvcp</span><span class="p">);</span>
+		
+		<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">context</span><span class="p">.</span><span class="n">Rip</span><span class="p">)</span>
+		<span class="p">{</span>
+			<span class="k">break</span><span class="p">;</span>
+		<span class="p">}</span>
+		<span class="n">printf</span><span class="p">(</span><span class="s">&#34;RSP:%llx &#34;</span><span class="p">,</span> <span class="n">establishframe</span><span class="p">);</span>
+		<span class="n">printf</span><span class="p">(</span><span class="s">&#34;RIP:%llx</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">context</span><span class="p">.</span><span class="n">Rip</span><span class="p">);</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">sub</span><span class="p">()</span>
+<span class="p">{</span>
+
+	<span class="n">Sleep</span><span class="p">(</span><span class="n">INFINITE</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">add</span><span class="p">()</span>
+<span class="p">{</span>
+	<span class="n">sub</span><span class="p">();</span>
+<span class="p">}</span>
+<span class="kt">void</span> <span class="nf">test</span><span class="p">()</span> 
+<span class="p">{</span>
+	
+	<span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+	<span class="n">add</span><span class="p">();</span>
+<span class="p">}</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">**</span> <span class="n">argv</span><span class="p">)</span>
+<span class="p">{</span>
+
+	<span class="n">HANDLE</span> <span class="kr">thread</span> <span class="o">=</span> <span class="n">CreateThread</span><span class="p">(</span><span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">LPTHREAD_START_ROUTINE</span><span class="p">)</span><span class="n">test</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+	<span class="n">WaitForSingleObject</span><span class="p">(</span><span class="kr">thread</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+	<span class="n">CONTEXT</span> <span class="n">context</span> <span class="o">=</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">};</span>
+	<span class="n">context</span><span class="p">.</span><span class="n">ContextFlags</span> <span class="o">=</span> <span class="n">CONTEXT_ALL</span><span class="p">;</span>
+	<span class="n">GetThreadContext</span><span class="p">(</span><span class="kr">thread</span><span class="p">,</span><span class="o">&amp;</span><span class="n">context</span><span class="p">);</span>
+	<span class="n">my_StackWalk</span><span class="p">(</span><span class="n">context</span><span class="p">);</span>
+	<span class="n">system</span><span class="p">(</span><span class="s">&#34;pause&#34;</span><span class="p">);</span>
+<span class="p">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>我们创建一个线程运行我们需要进行做回溯的代码，待线程启动后我们使用GetThreadContext获取线程的有效上下文，此时的捕获到的上下文处于Sleep底层函数ntdll!NtDelayExecution从内核返回用户层的那一刻，可以通过windbg调试查看对应的上下文信息。RtlLookupFunctionEntry获取对应函数的RUNTIME_FUNCTION信息。</p>
+<p><a href="/images/assets/post4/ntruntimefunction.PNG" rel=""><img src="/images/assets/post4/ntruntimefunction.PNG" width="100%"/></a><br>
+我们得到了子函数的堆栈信息就可以开始进行回溯了，通过RtlVirtualUnwind API就可以完成这个过程。<br>
+RtlVirtualUnwind是如何做模拟展开的呢，其实也是解析unwind_info信息，做一些反向回滚之类的操作。<br>
+windbg调用栈信息:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-h" data-lang="h"><span class="mi">0</span><span class="o">:</span><span class="mo">001</span><span class="o">&gt;</span> <span class="n">knf</span>
+ <span class="cp">#   Memory  Child-SP          RetAddr               Call Site
+</span><span class="cp"></span><span class="mo">00</span>           <span class="mo">0000003</span><span class="n">b</span><span class="err">`</span><span class="mf">753ff</span><span class="mi">9</span><span class="n">c8</span> <span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">a96de</span>     <span class="n">ntdll</span><span class="o">!</span><span class="n">NtDelayExecution</span><span class="o">+</span><span class="mh">0x14</span>
+<span class="mo">01</span>         <span class="mi">8</span> <span class="mo">0000003</span><span class="n">b</span><span class="err">`</span><span class="mf">753ff</span><span class="mi">9</span><span class="n">d0</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mf">43e9118</span><span class="n">f</span>     <span class="n">KERNELBASE</span><span class="o">!</span><span class="n">SleepEx</span><span class="o">+</span><span class="mh">0x9e</span>
+<span class="mo">02</span>        <span class="n">a0</span> <span class="mo">0000003</span><span class="n">b</span><span class="err">`</span><span class="mf">753ff</span><span class="n">a70</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mf">43e91009</span>     <span class="n">ctest</span><span class="o">!</span><span class="n">sub</span><span class="o">+</span><span class="mh">0xf</span>  
+<span class="mo">03</span>        <span class="mi">30</span> <span class="mo">0000003</span><span class="n">b</span><span class="err">`</span><span class="mf">753ff</span><span class="n">aa0</span> <span class="mf">00007ff</span><span class="mi">7</span><span class="err">`</span><span class="mf">43e911</span><span class="n">b9</span>     <span class="n">ctest</span><span class="o">!</span><span class="n">add</span><span class="o">+</span><span class="mh">0x9</span>  
+<span class="mo">04</span>        <span class="mi">30</span> <span class="mo">0000003</span><span class="n">b</span><span class="err">`</span><span class="mf">753ff</span><span class="n">ad0</span> <span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8f</span><span class="mi">5</span><span class="n">c7034</span>     <span class="n">ctest</span><span class="o">!</span><span class="n">test</span><span class="o">+</span><span class="mh">0x19</span> 
+<span class="mo">05</span>        <span class="mi">40</span> <span class="mo">0000003</span><span class="n">b</span><span class="err">`</span><span class="mf">753ff</span><span class="n">b10</span> <span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mi">90922651</span>     <span class="n">KERNEL32</span><span class="o">!</span><span class="n">BaseThreadInitThunk</span><span class="o">+</span><span class="mh">0x14</span>
+<span class="mo">06</span>        <span class="mi">30</span> <span class="mo">0000003</span><span class="n">b</span><span class="err">`</span><span class="mf">753ff</span><span class="n">b40</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">00000000</span>     <span class="n">ntdll</span><span class="o">!</span><span class="n">RtlUserThreadStart</span><span class="o">+</span><span class="mh">0x21</span>
+</code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-h" data-lang="h"><span class="mi">0</span><span class="o">:</span><span class="mo">000</span><span class="o">&gt;</span> <span class="p">.</span><span class="n">fnent</span> <span class="n">KERNELBASE</span><span class="o">!</span><span class="n">SleepEx</span>
+<span class="n">Debugger</span> <span class="n">function</span> <span class="n">entry</span> <span class="mo">00000224</span><span class="err">`</span><span class="n">be808480</span> <span class="k">for</span><span class="o">:</span>
+<span class="p">(</span><span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">a9640</span><span class="p">)</span>   <span class="n">KERNELBASE</span><span class="o">!</span><span class="n">SleepEx</span>   <span class="o">|</span>  <span class="p">(</span><span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">a9780</span><span class="p">)</span>   <span class="n">KERNELBASE</span><span class="o">!</span><span class="n">FlsSetValue</span>
+<span class="n">Exact</span> <span class="nl">matches</span><span class="p">:</span>
+    <span class="n">KERNELBASE</span><span class="o">!</span><span class="n">SleepEx</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+
+<span class="n">BeginAddress</span>      <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">0004</span><span class="mi">9640</span>
+<span class="n">EndAddress</span>        <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">0004</span><span class="mi">9777</span>
+<span class="n">UnwindInfoAddress</span> <span class="o">=</span> <span class="mo">00000000</span><span class="err">`</span><span class="mo">0026</span><span class="n">d2f8</span>
+
+<span class="n">Unwind</span> <span class="n">info</span> <span class="n">at</span> <span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e2</span><span class="n">cd2f8</span><span class="p">,</span> <span class="mi">14</span> <span class="n">bytes</span>
+  <span class="n">version</span> <span class="mi">1</span><span class="p">,</span> <span class="n">flags</span> <span class="mi">2</span><span class="p">,</span> <span class="n">prolog</span> <span class="n">e</span><span class="p">,</span> <span class="n">codes</span> <span class="mi">4</span>
+  <span class="n">handler</span> <span class="nl">routine</span><span class="p">:</span> <span class="n">KERNELBASE</span><span class="o">!</span><span class="n">_C_specific_handler</span> <span class="p">(</span><span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">eea35</span><span class="p">),</span> <span class="n">data</span> <span class="mi">1</span>
+  <span class="mo">00</span><span class="o">:</span> <span class="n">offs</span> <span class="n">e</span><span class="p">,</span> <span class="n">unwind</span> <span class="n">op</span> <span class="mi">2</span><span class="p">,</span> <span class="n">op</span> <span class="n">info</span> <span class="n">f</span>	<span class="n">UWOP_ALLOC_SMALL</span><span class="p">.</span>
+  <span class="mo">01</span><span class="o">:</span> <span class="n">offs</span> <span class="mi">7</span><span class="p">,</span> <span class="n">unwind</span> <span class="n">op</span> <span class="mi">0</span><span class="p">,</span> <span class="n">op</span> <span class="n">info</span> <span class="mi">7</span>	<span class="n">UWOP_PUSH_NONVOL</span> <span class="nl">reg</span><span class="p">:</span> <span class="n">rdi</span><span class="p">.</span>
+  <span class="mo">02</span><span class="o">:</span> <span class="n">offs</span> <span class="mi">6</span><span class="p">,</span> <span class="n">unwind</span> <span class="n">op</span> <span class="mi">0</span><span class="p">,</span> <span class="n">op</span> <span class="n">info</span> <span class="mi">6</span>	<span class="n">UWOP_PUSH_NONVOL</span> <span class="nl">reg</span><span class="p">:</span> <span class="n">rsi</span><span class="p">.</span>
+  <span class="mo">03</span><span class="o">:</span> <span class="n">offs</span> <span class="mi">5</span><span class="p">,</span> <span class="n">unwind</span> <span class="n">op</span> <span class="mi">0</span><span class="p">,</span> <span class="n">op</span> <span class="n">info</span> <span class="mi">3</span>	<span class="n">UWOP_PUSH_NONVOL</span> <span class="nl">reg</span><span class="p">:</span> <span class="n">rbx</span><span class="p">.</span>
+<span class="mi">0</span><span class="o">:</span><span class="mo">000</span><span class="o">&gt;</span> <span class="n">u</span> <span class="n">KERNELBASE</span><span class="o">!</span><span class="n">SleepEx</span>
+<span class="n">KERNELBASE</span><span class="o">!</span><span class="nl">SleepEx</span><span class="p">:</span>
+<span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">a9640</span> <span class="mi">89542410</span>        <span class="n">mov</span>     <span class="n">dword</span> <span class="n">ptr</span> <span class="p">[</span><span class="n">rsp</span><span class="o">+</span><span class="mi">10</span><span class="n">h</span><span class="p">],</span><span class="n">edx</span>
+<span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">a9644</span> <span class="mi">53</span>              <span class="n">push</span>    <span class="n">rbx</span>
+<span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">a9645</span> <span class="mi">56</span>              <span class="n">push</span>    <span class="n">rsi</span>
+<span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">a9646</span> <span class="mi">57</span>              <span class="n">push</span>    <span class="n">rdi</span>
+<span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">a9647</span> <span class="mi">4881</span><span class="n">ec80000000</span>  <span class="n">sub</span>     <span class="n">rsp</span><span class="p">,</span><span class="mi">80</span><span class="n">h</span>
+<span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">a964e</span> <span class="mi">8</span><span class="n">bda</span>            <span class="n">mov</span>     <span class="n">ebx</span><span class="p">,</span><span class="n">edx</span>
+<span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">a9650</span> <span class="mi">8</span><span class="n">bf9</span>            <span class="n">mov</span>     <span class="n">edi</span><span class="p">,</span><span class="n">ecx</span>
+<span class="mf">00007ff</span><span class="mi">9</span><span class="err">`</span><span class="mf">8e0</span><span class="n">a9652</span> <span class="mi">48</span><span class="n">c744243048000000</span> <span class="n">mov</span>   <span class="n">qword</span> <span class="n">ptr</span> <span class="p">[</span><span class="n">rsp</span><span class="o">+</span><span class="mi">30</span><span class="n">h</span><span class="p">],</span><span class="mi">48</span><span class="n">h</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>通过RtlVirtualUnwind对KERNELBASE!SleepEx做展开，获取到的Child-SP 0x0000003b753ff9d0,而context中还有一个RSP的值为0x0000003b753ffa70
+这个值怎能了来的呢，如果你理解了之前的知识，很明显根据unwind_info中的信息得到的:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0x0000003b753ff9d0+(f*8+8)+8*3+8 = 0x0000003b753ffa70
+</code></pre></td></tr></table>
+</div>
+</div><p>而这个RSP则是函数sub函数的Child-SP,RtlVirtualUnwind就是这样一层一层往上滚，直到顶层为止。</p>
+<p>Reference</p>
+<p><a href="https://codemachine.com/articles/x64_deep_dive.html" target="_blank" rel="noopener noreffer">https://codemachine.com/articles/x64_deep_dive.html</a><br>
+<a href="https://boxcounter.com/posts/2011-11-04-seh-x64/" target="_blank" rel="noopener noreffer">https://boxcounter.com/posts/2011-11-04-seh-x64/</a><br>
+<a href="https://www.anquanke.com/post/id/247688#h3-10" target="_blank" rel="noopener noreffer">https://www.anquanke.com/post/id/247688#h3-10</a><br>
+<a href="https://docs.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-rtllookupfunctionentry" target="_blank" rel="noopener noreffer">https://docs.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-rtllookupfunctionentry</a><br>
+<a href="https://docs.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-rtlvirtualunwind" target="_blank" rel="noopener noreffer">https://docs.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-rtlvirtualunwind</a><br>
+<a href="https://docs.microsoft.com/en-us/cpp/build/prolog-and-epilog?view=msvc-170&amp;viewFallbackFrom=vs-2019" target="_blank" rel="noopener noreffer">https://docs.microsoft.com/en-us/cpp/build/prolog-and-epilog?view=msvc-170&viewFallbackFrom=vs-2019</a><br>
+<a href="https://docs.microsoft.com/en-us/cpp/build/exception-handling-x64?view=msvc-170" target="_blank" rel="noopener noreffer">https://docs.microsoft.com/en-us/cpp/build/exception-handling-x64?view=msvc-170</a></p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>Updated on 2022-05-22</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/index.md" target="_blank">Read Markdown</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="Share on Twitter" data-sharer="twitter" data-url="https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/" data-title="x86与x64栈回溯" data-via="realDonaldTrump" data-hashtags="OS"><i class="fab fa-twitter fa-fw"></i></a><a href="javascript:void(0);" title="Share on Facebook" data-sharer="facebook" data-url="https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/" data-hashtag="OS"><i class="fab fa-facebook-square fa-fw"></i></a><a href="javascript:void(0);" title="Share on Hacker News" data-sharer="hackernews" data-url="https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/" data-title="x86与x64栈回溯"><i class="fab fa-hacker-news fa-fw"></i></a><a href="javascript:void(0);" title="Share on Line" data-sharer="line" data-url="https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/" data-title="x86与x64栈回溯"><i data-svg-src="/lib/simple-icons/icons/line.min.svg"></i></a><a href="javascript:void(0);" title="Share on 微博" data-sharer="weibo" data-url="https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/" data-title="x86与x64栈回溯"><i class="fab fa-weibo fa-fw"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/os/">OS</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">Back</a></span>&nbsp;|&nbsp;<span><a href="/">Home</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" class="prev" rel="prev" title="Intel VT x64 EPT Hook框架的实现"><i class="fas fa-angle-left fa-fw"></i>Intel VT x64 EPT Hook框架的实现</a></div>
+</div>
+</article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021 - 2022</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">jhinxs</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">Jhinxs Story</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="Back to Top">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="View Comments">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><script type="text/javascript" src="/lib/smooth-scroll/smooth-scroll.min.js"></script><script type="text/javascript" src="/lib/autocomplete/autocomplete.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.min.js"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.js"></script><script type="text/javascript" src="/lib/clipboard/clipboard.min.js"></script><script type="text/javascript" src="/lib/sharer/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"Copy to clipboard","maxShownLines":10},"comment":{},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","maxResultLength":10,"noResultsFound":"No results found","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

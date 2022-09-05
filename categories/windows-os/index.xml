@@ -3,7 +3,18 @@
         <title>Windows OS - Category - Jhin&#39;s Story</title>
         <link>https://jhinxs.com/categories/windows-os/</link>
         <description>Windows OS - Category - Jhin&#39;s Story</description>
-        <generator>Hugo -- gohugo.io</generator><language>en</language><copyright>jhinxs story</copyright><lastBuildDate>Sat, 21 Aug 2021 12:37:55 &#43;0800</lastBuildDate><atom:link href="https://jhinxs.com/categories/windows-os/" rel="self" type="application/rss+xml" /><item>
+        <generator>Hugo -- gohugo.io</generator><language>en</language><copyright>jhinxs story</copyright><lastBuildDate>Sun, 22 May 2022 09:32:15 &#43;0800</lastBuildDate><atom:link href="https://jhinxs.com/categories/windows-os/" rel="self" type="application/rss+xml" /><item>
+    <title>x86与x64栈回溯</title>
+    <link>https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/</link>
+    <pubDate>Sun, 22 May 2022 09:32:15 &#43;0800</pubDate>
+    <author>Author</author>
+    <guid>https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/</guid>
+    <description><![CDATA[x86 Call Stack 在x86下，一般函数的调用栈帧的结构大概如下:
+
+在管理栈空间中，最主要的两个寄存器分别为EBP以及ESP,EBP表示为当前函数栈的开始，也就是栈底，而ESP则用于提升栈空间，表示为栈顶。
+1 2 3 4 5 6 7 8 9 10 11  void add() { printf(&#34;test&#34;); } void test() { int c = 1; int b = 2; add(); }   反汇编上述代码我们大致可以看到类似如下的汇编语句:
+1 2 3 4 5 6 7 8 9 10  push ebp mov ebp,esp sub esp,xxxH mov dword ptr [ebp-4h],1 mov dword ptr [ebp-8h],2 call add add esp,xxxH mov esp,ebp pop ebp ret   结合上图不难看出，在x86下，通过EBP可以寻址当前函数体内的局部变量，函数参数，也可以找到函数返回地址，父函数的栈空间，例如：EBP-XXXH 通常表示当前函数内的局部变量，EBP+4 的位置则是返回地址，EBP+8 的位置可能是函数的参数。如此一来，不难看出通过EBP加正数偏移可以引用父函数的地址空间，加负数偏移可以引用当前函数的地址空间。]]></description>
+</item><item>
     <title>x64的一些特性</title>
     <link>https://jhinxs.com/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/</link>
     <pubDate>Sat, 21 Aug 2021 12:37:55 &#43;0800</pubDate>
