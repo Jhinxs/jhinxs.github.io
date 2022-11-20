@@ -8,6 +8,15 @@ https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
 （1）都需要安装ninja编译工具：https://github.com/ninja-build/ninja/releases/tag/v1.10.2 （ninja编译速度快）  
 （2）要在VS中安装Clang编译集成工具  
 [<img src="/images/assets/post5/vsclang.PNG" width="100%"/>](/images/assets/post5/vsclang.PNG)  
+（3）在项目工程文件夹中，新建Directory.build.props 文件，内容如下，路径为你的即可：
+```xml
+<Project>
+    <PropertyGroup>
+         <LLVMInstallDir>D:\Pluto-Obfuscator\build</LLVMInstallDir>
+         <LLVMToolsVersion>12.0.1</LLVMToolsVersion>
+    </PropertyGroup>
+</Project>
+```
 
 ### Ollvm13  
 项目地址：https://github.com/lemon4ex/obfuscator/tree/llvm-13.0  

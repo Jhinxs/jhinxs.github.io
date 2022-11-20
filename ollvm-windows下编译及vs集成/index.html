@@ -12,7 +12,8 @@ https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
 （1）都需要安装ninja编译工具：https://github.com/ninja-build/ninja/releases/tag/v1.10.2 （ninja编译速度快）
 （2）要在VS中安装Clang编译集成工具
 
-Ollvm13 项目地址：https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
+（3）在项目工程文件夹中，新建Directory.build.props 文件，内容如下，路径为你的即可：
+1 2 3 4 5 6  &lt;Project&gt; &lt;PropertyGroup&gt; &lt;LLVMInstallDir&gt;D:\Pluto-Obfuscator\build&lt;/LLVMInstallDir&gt; &lt;LLVMToolsVersion&gt;12.0.1&lt;/LLVMToolsVersion&gt; &lt;/PropertyGroup&gt; &lt;/Project&gt;   Ollvm13 项目地址：https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
 这个项目编译的过程:
 编译命令 1 2 3 4 5 6 7 8  进入VS开发者命令行建议管理员，建议关闭杀软 G:\VisualStudio2019\VisualStudio2019\VC\Auxiliary\Build\vcvarsall.bat x64 cd obfuscator-llvm-13.0 mkdir build cd build cmake -G &#34;Ninja&#34; -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_NEW_PASS_MANAGER=OFF -DLLVM_INCLUDE_TESTS=OFF .. ninja 编译完后再bin目录下看到生成的clang等exe表示成功，编译过程中产生的warning可忽略   混淆命令 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23  控制流扁平化 这个模式主要是把一些if-else语句，嵌套成do-while语句 -mllvm -fla：激活控制流扁平化 -mllvm -split：激活基本块分割。在一起使用时改善展平。 -mllvm -split_num=3：如果激活了传递，则在每个基本块上应用3次。默认值：1 指令替换 这个模式主要用功能上等效但更复杂的指令序列替换标准二元运算符(&#43; , – , &amp; , | 和 ^) -mllvm -sub：激活指令替换 -mllvm -sub_loop=3：如果激活了传递，则在函数上应用3次。默认值：1 虚假控制流程 这个模式主要嵌套几层判断逻辑，一个简单的运算都会在外面包几层if-else，所以这个模式加上编译速度会慢很多因为要做几层假的逻辑包裹真正有用的代码。 另外说一下这个模式编译的时候要浪费相当长时间包哪几层不是闹得！ -mllvm -bcf：激活虚假控制流程 -mllvm -bcf_loop=3：如果激活了传递，则在函数上应用3次。默认值：1 -mllvm -bcf_prob=40：如果激活了传递，基本块将以40％的概率进行模糊处理。默认值：30 ##### https://heroims." />
 <meta property="og:type" content="article" />
@@ -30,7 +31,8 @@ https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
 （1）都需要安装ninja编译工具：https://github.com/ninja-build/ninja/releases/tag/v1.10.2 （ninja编译速度快）
 （2）要在VS中安装Clang编译集成工具
 
-Ollvm13 项目地址：https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
+（3）在项目工程文件夹中，新建Directory.build.props 文件，内容如下，路径为你的即可：
+1 2 3 4 5 6  &lt;Project&gt; &lt;PropertyGroup&gt; &lt;LLVMInstallDir&gt;D:\Pluto-Obfuscator\build&lt;/LLVMInstallDir&gt; &lt;LLVMToolsVersion&gt;12.0.1&lt;/LLVMToolsVersion&gt; &lt;/PropertyGroup&gt; &lt;/Project&gt;   Ollvm13 项目地址：https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
 这个项目编译的过程:
 编译命令 1 2 3 4 5 6 7 8  进入VS开发者命令行建议管理员，建议关闭杀软 G:\VisualStudio2019\VisualStudio2019\VC\Auxiliary\Build\vcvarsall.bat x64 cd obfuscator-llvm-13.0 mkdir build cd build cmake -G &#34;Ninja&#34; -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_NEW_PASS_MANAGER=OFF -DLLVM_INCLUDE_TESTS=OFF .. ninja 编译完后再bin目录下看到生成的clang等exe表示成功，编译过程中产生的warning可忽略   混淆命令 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23  控制流扁平化 这个模式主要是把一些if-else语句，嵌套成do-while语句 -mllvm -fla：激活控制流扁平化 -mllvm -split：激活基本块分割。在一起使用时改善展平。 -mllvm -split_num=3：如果激活了传递，则在每个基本块上应用3次。默认值：1 指令替换 这个模式主要用功能上等效但更复杂的指令序列替换标准二元运算符(&#43; , – , &amp; , | 和 ^) -mllvm -sub：激活指令替换 -mllvm -sub_loop=3：如果激活了传递，则在函数上应用3次。默认值：1 虚假控制流程 这个模式主要嵌套几层判断逻辑，一个简单的运算都会在外面包几层if-else，所以这个模式加上编译速度会慢很多因为要做几层假的逻辑包裹真正有用的代码。 另外说一下这个模式编译的时候要浪费相当长时间包哪几层不是闹得！ -mllvm -bcf：激活虚假控制流程 -mllvm -bcf_loop=3：如果激活了传递，则在函数上应用3次。默认值：1 -mllvm -bcf_prob=40：如果激活了传递，基本块将以40％的概率进行模糊处理。默认值：30 ##### https://heroims."/>
 <meta name="application-name" content="LoveIt">
@@ -45,7 +47,7 @@ Ollvm13 项目地址：https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
         "mainEntityOfPage": {
             "@type": "WebPage",
             "@id": "https:\/\/jhinxs.com\/ollvm-windows%E4%B8%8B%E7%BC%96%E8%AF%91%E5%8F%8Avs%E9%9B%86%E6%88%90\/"
-        },"image": ["https:\/\/jhinxs.com\/jhin.png"],"genre": "posts","keywords": "Code","wordcount":  216 ,
+        },"image": ["https:\/\/jhinxs.com\/jhin.png"],"genre": "posts","keywords": "Code","wordcount":  230 ,
         "url": "https:\/\/jhinxs.com\/ollvm-windows%E4%B8%8B%E7%BC%96%E8%AF%91%E5%8F%8Avs%E9%9B%86%E6%88%90\/","datePublished": "2022-07-22T18:17:35+08:00","dateModified": "2022-07-22T18:17:35+08:00","license": "jhinxs story","publisher": {
             "@type": "Organization",
             "name": "xxxx","logo": "https:\/\/jhinxs.com\/jhin.png"},"author": {
@@ -122,7 +124,7 @@ Ollvm13 项目地址：https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
             <div class="toc-content" id="toc-content-auto"></div>
         </div><article class="page single"><h1 class="single-title animated flipInX">Ollvm Windows下编译及VS集成</h1><div class="post-meta">
             <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-category">included in <a href="/categories/programming/"><i class="far fa-folder fa-fw"></i>programming</a></span></div>
-            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2022-07-22">2022-07-22</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;216 words&nbsp;
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2022-07-22">2022-07-22</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;230 words&nbsp;
                 <i class="far fa-clock fa-fw"></i>&nbsp;2 minutes&nbsp;</div>
         </div><div class="details toc" id="toc-static"  kept="">
                 <div class="details-summary toc-title">
@@ -158,8 +160,27 @@ Ollvm13 项目地址：https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
 *注：<br>
 （1）都需要安装ninja编译工具：https://github.com/ninja-build/ninja/releases/tag/v1.10.2 （ninja编译速度快）<br>
 （2）要在VS中安装Clang编译集成工具<br>
-<a href="/images/assets/post5/vsclang.PNG" rel=""><img src="/images/assets/post5/vsclang.PNG" width="100%"/></a></p>
-<h3 id="ollvm13">Ollvm13</h3>
+<a href="/images/assets/post5/vsclang.PNG" rel=""><img src="/images/assets/post5/vsclang.PNG" width="100%"/></a><br>
+（3）在项目工程文件夹中，新建Directory.build.props 文件，内容如下，路径为你的即可：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;Project&gt;</span>
+    <span class="nt">&lt;PropertyGroup&gt;</span>
+         <span class="nt">&lt;LLVMInstallDir&gt;</span>D:\Pluto-Obfuscator\build<span class="nt">&lt;/LLVMInstallDir&gt;</span>
+         <span class="nt">&lt;LLVMToolsVersion&gt;</span>12.0.1<span class="nt">&lt;/LLVMToolsVersion&gt;</span>
+    <span class="nt">&lt;/PropertyGroup&gt;</span>
+<span class="nt">&lt;/Project&gt;</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="ollvm13">Ollvm13</h3>
 <p>项目地址：https://github.com/lemon4ex/obfuscator/tree/llvm-13.0</p>
 <p>这个项目编译的过程:</p>
 <h4 id="编译命令">编译命令</h4>
