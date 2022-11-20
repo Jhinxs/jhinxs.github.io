@@ -3,9 +3,24 @@
         <title>Jhin&#39;s Story</title>
         <link>https://jhinxs.com/</link>
         <description>Jhinxs</description>
-        <generator>Hugo -- gohugo.io</generator><language>en</language><copyright>jhinxs story</copyright><lastBuildDate>Sun, 22 May 2022 09:32:15 &#43;0800</lastBuildDate>
+        <generator>Hugo -- gohugo.io</generator><language>en</language><copyright>jhinxs story</copyright><lastBuildDate>Fri, 22 Jul 2022 18:17:35 &#43;0800</lastBuildDate>
             <atom:link href="https://jhinxs.com/index.xml" rel="self" type="application/rss+xml" />
         <item>
+    <title>Ollvm Windows下编译及VS集成</title>
+    <link>https://jhinxs.com/ollvm-windows%E4%B8%8B%E7%BC%96%E8%AF%91%E5%8F%8Avs%E9%9B%86%E6%88%90/</link>
+    <pubDate>Fri, 22 Jul 2022 18:17:35 &#43;0800</pubDate>
+    <author>Author</author>
+    <guid>https://jhinxs.com/ollvm-windows%E4%B8%8B%E7%BC%96%E8%AF%91%E5%8F%8Avs%E9%9B%86%E6%88%90/</guid>
+    <description><![CDATA[之前用的Ollvm基于LLVM4的实在在是太老了，看到了几个新一点的项目就拿来编译瞅瞅，在Windows下编译的过程过于坎坷，一共编译成功了两个项目，这里分别记录一下，以供查查 https://github.com/bluesadi/Pluto-Obfuscator
+https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
+*注：
+（1）都需要安装ninja编译工具：https://github.com/ninja-build/ninja/releases/tag/v1.10.2 （ninja编译速度快）
+（2）要在VS中安装Clang编译集成工具
+
+Ollvm13 项目地址：https://github.com/lemon4ex/obfuscator/tree/llvm-13.0
+这个项目编译的过程:
+编译命令 1 2 3 4 5 6 7 8  进入VS开发者命令行建议管理员，建议关闭杀软 G:\VisualStudio2019\VisualStudio2019\VC\Auxiliary\Build\vcvarsall.bat x64 cd obfuscator-llvm-13.0 mkdir build cd build cmake -G &#34;Ninja&#34; -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_NEW_PASS_MANAGER=OFF -DLLVM_INCLUDE_TESTS=OFF .. ninja 编译完后再bin目录下看到生成的clang等exe表示成功，编译过程中产生的warning可忽略   混淆命令 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23  控制流扁平化 这个模式主要是把一些if-else语句，嵌套成do-while语句 -mllvm -fla：激活控制流扁平化 -mllvm -split：激活基本块分割。在一起使用时改善展平。 -mllvm -split_num=3：如果激活了传递，则在每个基本块上应用3次。默认值：1 指令替换 这个模式主要用功能上等效但更复杂的指令序列替换标准二元运算符(+ , – , &amp; , | 和 ^) -mllvm -sub：激活指令替换 -mllvm -sub_loop=3：如果激活了传递，则在函数上应用3次。默认值：1 虚假控制流程 这个模式主要嵌套几层判断逻辑，一个简单的运算都会在外面包几层if-else，所以这个模式加上编译速度会慢很多因为要做几层假的逻辑包裹真正有用的代码。 另外说一下这个模式编译的时候要浪费相当长时间包哪几层不是闹得！ -mllvm -bcf：激活虚假控制流程 -mllvm -bcf_loop=3：如果激活了传递，则在函数上应用3次。默认值：1 -mllvm -bcf_prob=40：如果激活了传递，基本块将以40％的概率进行模糊处理。默认值：30 ##### https://heroims.]]></description>
+</item><item>
     <title>x86与x64栈回溯</title>
     <link>https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/</link>
     <pubDate>Sun, 22 May 2022 09:32:15 &#43;0800</pubDate>
