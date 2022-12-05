@@ -15,6 +15,22 @@
 1 2 3 4 5 6 7 8 9 10 11  void add() { printf(&#34;test&#34;); } void test() { int c = 1; int b = 2; add(); }   反汇编上述代码我们大致可以看到类似如下的汇编语句:
 1 2 3 4 5 6 7 8 9 10  push ebp mov ebp,esp sub esp,xxxH mov dword ptr [ebp-4h],1 mov dword ptr [ebp-8h],2 call add add esp,xxxH mov esp,ebp pop ebp ret   结合上图不难看出，在x86下，通过EBP可以寻址当前函数体内的局部变量，函数参数，也可以找到函数返回地址，父函数的栈空间，例如：EBP-XXXH 通常表示当前函数内的局部变量，EBP+4 的位置则是返回地址，EBP+8 的位置可能是函数的参数。如此一来，不难看出通过EBP加正数偏移可以引用父函数的地址空间，加负数偏移可以引用当前函数的地址空间。]]></description>
 </item><item>
+    <title>Windows BIOS MBR引导分析</title>
+    <link>https://jhinxs.com/windows-bios-mbr%E5%BC%95%E5%AF%BC%E5%88%86%E6%9E%90/</link>
+    <pubDate>Wed, 02 Mar 2022 15:22:06 &#43;0800</pubDate>
+    <author>Author</author>
+    <guid>https://jhinxs.com/windows-bios-mbr%E5%BC%95%E5%AF%BC%E5%88%86%E6%9E%90/</guid>
+    <description><![CDATA[流程概述 Windows BIOS开机引导流程概览：
+ 1.开机主板加电，BIOS运行 2.运行硬盘开头的MBR代码 3.MBR代码引导运行Bootmgr（也有可能引导VBR，然后VBR引导Bootmgr） 4.Bootmgr根据BCD配置，自动运行或让用户选择不同的启动项，并加载运行Winload.exe 5.Winload.exe加载ntoskrnl.exe内核模块 6.ntoskrnl.exe启动操作系统  MBR与VBR结构概览 
+MBR MBR主引导记录，用于引导后续运行的代码，一般用作引导bootmgr等第二阶段的引导程序
+MBR一般位于每块硬盘的最开头的512个字节，也就是一个扇区的大小，其中前446个字节为引导程序，然后是64个字节的分区表，其中每个分区项为16个字节，最后是2个字节的Magic,统一为0X55,0XAA,操作系统用此Magic确定和查找引导记录，如果没有，则无法进行引导。
+其中446个字节的引导程序中：
+  前162个字节为MBR可执行代码
+  163-1B2这80个字节为错误信息字符串
+  1B3-1BD这11字节包含2个byte 00 padding,3个字节63 7B 9A分别代表了错误信息字符串的offset，然后是4个字节的磁盘签名，然后是2个字节的padding
+  磁盘签名可以通过注册表查看：reg query HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
+  MBR结构 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21  //主引导记录 typedef struct _MASTER_BOOT_RECORD { CHAR bootcode[446]; //实际的引导代码 	MBR_PARTITION_TABLE partitiontable[4]; //分区表 	USHORT MBRMagic; // 0x55AA }MASTER_BOOT_RECORD,*PMASTER_BOOT_RECORD; //分区表项 typedef struct _MBR_PARTITION_TABLE { BYTE ActiveStatus; //活动状态 0x80=active 0x00=noactive，表示当前分区是否为活动分区，只能有一个活动分区 	BYTE StartHead; WORD StartingSectCylinder; //起始扇区柱面 	BYTE PARTITION_SYSTEMID; //标识ID，指示当前分区的分区类型，比如常见的有：NTFS,FAT32等等 	BYTE EndHead; WORD EndingSectCylinder; DWORD RelativeSector; DWORD TotalSectors; //分区中的总扇区数 }MBR_PARTITION_TABLE,*PMBR_PARTITION_TABLE;   分析MBR代码 MBR的字节码如下图，测试环境为WIN10,21H2]]></description>
+</item><item>
     <title>x64的一些特性</title>
     <link>https://jhinxs.com/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/</link>
     <pubDate>Sat, 21 Aug 2021 12:37:55 &#43;0800</pubDate>
