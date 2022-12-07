@@ -3,21 +3,10 @@
         <title>OS - Tag - Jhin&#39;s Story</title>
         <link>https://jhinxs.com/tags/os/</link>
         <description>OS - Tag - Jhin&#39;s Story</description>
-        <generator>Hugo -- gohugo.io</generator><language>en</language><copyright>jhinxs story</copyright><lastBuildDate>Sun, 22 May 2022 09:32:15 &#43;0800</lastBuildDate><atom:link href="https://jhinxs.com/tags/os/" rel="self" type="application/rss+xml" /><item>
-    <title>x86与x64栈回溯</title>
-    <link>https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/</link>
-    <pubDate>Sun, 22 May 2022 09:32:15 &#43;0800</pubDate>
-    <author>Author</author>
-    <guid>https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/</guid>
-    <description><![CDATA[x86 Call Stack 在x86下，一般函数的调用栈帧的结构大概如下:
-
-在管理栈空间中，最主要的两个寄存器分别为EBP以及ESP,EBP表示为当前函数栈的开始，也就是栈底，而ESP则用于提升栈空间，表示为栈顶。
-1 2 3 4 5 6 7 8 9 10 11  void add() { printf(&#34;test&#34;); } void test() { int c = 1; int b = 2; add(); }   反汇编上述代码我们大致可以看到类似如下的汇编语句:
-1 2 3 4 5 6 7 8 9 10  push ebp mov ebp,esp sub esp,xxxH mov dword ptr [ebp-4h],1 mov dword ptr [ebp-8h],2 call add add esp,xxxH mov esp,ebp pop ebp ret   结合上图不难看出，在x86下，通过EBP可以寻址当前函数体内的局部变量，函数参数，也可以找到函数返回地址，父函数的栈空间，例如：EBP-XXXH 通常表示当前函数内的局部变量，EBP+4 的位置则是返回地址，EBP+8 的位置可能是函数的参数。如此一来，不难看出通过EBP加正数偏移可以引用父函数的地址空间，加负数偏移可以引用当前函数的地址空间。]]></description>
-</item><item>
+        <generator>Hugo -- gohugo.io</generator><language>en</language><copyright>jhinxs story</copyright><lastBuildDate>Sat, 05 Nov 2022 16:07:06 &#43;0800</lastBuildDate><atom:link href="https://jhinxs.com/tags/os/" rel="self" type="application/rss+xml" /><item>
     <title>Windows BIOS MBR引导分析</title>
     <link>https://jhinxs.com/windows-bios-mbr%E5%BC%95%E5%AF%BC%E5%88%86%E6%9E%90/</link>
-    <pubDate>Wed, 02 Mar 2022 15:22:06 &#43;0800</pubDate>
+    <pubDate>Sat, 05 Nov 2022 16:07:06 &#43;0800</pubDate>
     <author>Author</author>
     <guid>https://jhinxs.com/windows-bios-mbr%E5%BC%95%E5%AF%BC%E5%88%86%E6%9E%90/</guid>
     <description><![CDATA[流程概述 Windows BIOS开机引导流程概览：
@@ -30,6 +19,17 @@ MBR一般位于每块硬盘的最开头的512个字节，也就是一个扇区�
   1B3-1BD这11字节包含2个byte 00 padding,3个字节63 7B 9A分别代表了错误信息字符串的offset，然后是4个字节的磁盘签名，然后是2个字节的padding
   磁盘签名可以通过注册表查看：reg query HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
   MBR结构 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21  //主引导记录 typedef struct _MASTER_BOOT_RECORD { CHAR bootcode[446]; //实际的引导代码 	MBR_PARTITION_TABLE partitiontable[4]; //分区表 	USHORT MBRMagic; // 0x55AA }MASTER_BOOT_RECORD,*PMASTER_BOOT_RECORD; //分区表项 typedef struct _MBR_PARTITION_TABLE { BYTE ActiveStatus; //活动状态 0x80=active 0x00=noactive，表示当前分区是否为活动分区，只能有一个活动分区 	BYTE StartHead; WORD StartingSectCylinder; //起始扇区柱面 	BYTE PARTITION_SYSTEMID; //标识ID，指示当前分区的分区类型，比如常见的有：NTFS,FAT32等等 	BYTE EndHead; WORD EndingSectCylinder; DWORD RelativeSector; DWORD TotalSectors; //分区中的总扇区数 }MBR_PARTITION_TABLE,*PMBR_PARTITION_TABLE;   分析MBR代码 MBR的字节码如下图，测试环境为WIN10,21H2]]></description>
+</item><item>
+    <title>x86与x64栈回溯</title>
+    <link>https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/</link>
+    <pubDate>Sun, 22 May 2022 09:32:15 &#43;0800</pubDate>
+    <author>Author</author>
+    <guid>https://jhinxs.com/x86%E4%B8%8Ex64%E6%A0%88%E5%9B%9E%E6%BA%AF/</guid>
+    <description><![CDATA[x86 Call Stack 在x86下，一般函数的调用栈帧的结构大概如下:
+
+在管理栈空间中，最主要的两个寄存器分别为EBP以及ESP,EBP表示为当前函数栈的开始，也就是栈底，而ESP则用于提升栈空间，表示为栈顶。
+1 2 3 4 5 6 7 8 9 10 11  void add() { printf(&#34;test&#34;); } void test() { int c = 1; int b = 2; add(); }   反汇编上述代码我们大致可以看到类似如下的汇编语句:
+1 2 3 4 5 6 7 8 9 10  push ebp mov ebp,esp sub esp,xxxH mov dword ptr [ebp-4h],1 mov dword ptr [ebp-8h],2 call add add esp,xxxH mov esp,ebp pop ebp ret   结合上图不难看出，在x86下，通过EBP可以寻址当前函数体内的局部变量，函数参数，也可以找到函数返回地址，父函数的栈空间，例如：EBP-XXXH 通常表示当前函数内的局部变量，EBP+4 的位置则是返回地址，EBP+8 的位置可能是函数的参数。如此一来，不难看出通过EBP加正数偏移可以引用父函数的地址空间，加负数偏移可以引用当前函数的地址空间。]]></description>
 </item><item>
     <title>x64的一些特性</title>
     <link>https://jhinxs.com/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/</link>

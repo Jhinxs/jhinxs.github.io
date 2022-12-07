@@ -3,7 +3,23 @@
         <title>All Posts - Jhin&#39;s Story</title>
         <link>https://jhinxs.com/posts/</link>
         <description>All Posts | Jhin&#39;s Story</description>
-        <generator>Hugo -- gohugo.io</generator><language>en</language><copyright>jhinxs story</copyright><lastBuildDate>Fri, 22 Jul 2022 18:17:35 &#43;0800</lastBuildDate><atom:link href="https://jhinxs.com/posts/" rel="self" type="application/rss+xml" /><item>
+        <generator>Hugo -- gohugo.io</generator><language>en</language><copyright>jhinxs story</copyright><lastBuildDate>Sat, 05 Nov 2022 16:07:06 &#43;0800</lastBuildDate><atom:link href="https://jhinxs.com/posts/" rel="self" type="application/rss+xml" /><item>
+    <title>Windows BIOS MBR引导分析</title>
+    <link>https://jhinxs.com/windows-bios-mbr%E5%BC%95%E5%AF%BC%E5%88%86%E6%9E%90/</link>
+    <pubDate>Sat, 05 Nov 2022 16:07:06 &#43;0800</pubDate>
+    <author>Author</author>
+    <guid>https://jhinxs.com/windows-bios-mbr%E5%BC%95%E5%AF%BC%E5%88%86%E6%9E%90/</guid>
+    <description><![CDATA[流程概述 Windows BIOS开机引导流程概览：
+ 1.开机主板加电，BIOS运行 2.运行硬盘开头的MBR代码 3.MBR代码引导运行Bootmgr（也有可能引导VBR，然后VBR引导Bootmgr） 4.Bootmgr根据BCD配置，自动运行或让用户选择不同的启动项，并加载运行Winload.exe 5.Winload.exe加载ntoskrnl.exe内核模块 6.ntoskrnl.exe启动操作系统  MBR与VBR结构概览 
+MBR MBR主引导记录，用于引导后续运行的代码，一般用作引导bootmgr等第二阶段的引导程序
+MBR一般位于每块硬盘的最开头的512个字节，也就是一个扇区的大小，其中前446个字节为引导程序，然后是64个字节的分区表，其中每个分区项为16个字节，最后是2个字节的Magic,统一为0X55,0XAA,操作系统用此Magic确定和查找引导记录，如果没有，则无法进行引导。
+其中446个字节的引导程序中：
+  前162个字节为MBR可执行代码
+  163-1B2这80个字节为错误信息字符串
+  1B3-1BD这11字节包含2个byte 00 padding,3个字节63 7B 9A分别代表了错误信息字符串的offset，然后是4个字节的磁盘签名，然后是2个字节的padding
+  磁盘签名可以通过注册表查看：reg query HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
+  MBR结构 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21  //主引导记录 typedef struct _MASTER_BOOT_RECORD { CHAR bootcode[446]; //实际的引导代码 	MBR_PARTITION_TABLE partitiontable[4]; //分区表 	USHORT MBRMagic; // 0x55AA }MASTER_BOOT_RECORD,*PMASTER_BOOT_RECORD; //分区表项 typedef struct _MBR_PARTITION_TABLE { BYTE ActiveStatus; //活动状态 0x80=active 0x00=noactive，表示当前分区是否为活动分区，只能有一个活动分区 	BYTE StartHead; WORD StartingSectCylinder; //起始扇区柱面 	BYTE PARTITION_SYSTEMID; //标识ID，指示当前分区的分区类型，比如常见的有：NTFS,FAT32等等 	BYTE EndHead; WORD EndingSectCylinder; DWORD RelativeSector; DWORD TotalSectors; //分区中的总扇区数 }MBR_PARTITION_TABLE,*PMBR_PARTITION_TABLE;   分析MBR代码 MBR的字节码如下图，测试环境为WIN10,21H2]]></description>
+</item><item>
     <title>Ollvm Windows下编译及VS集成</title>
     <link>https://jhinxs.com/ollvm-windows%E4%B8%8B%E7%BC%96%E8%AF%91%E5%8F%8Avs%E9%9B%86%E6%88%90/</link>
     <pubDate>Fri, 22 Jul 2022 18:17:35 &#43;0800</pubDate>
@@ -45,22 +61,6 @@ EPT内存管理 EPT是intel为内存虚拟化而设计的一种硬件机制，�
 因为EPT的存在，Guest对一个地址访问时，每当访问一个物理地址，都会走EPT物理地址转化的过程，这个过程和x64下的VA-&gt;PA的转换过程类似，例如访问Guest访问某个进程物理地址，首先找到CR3，此时访问CR3中的物理地址，就会触发GPA-&gt;HPA的EPT转换过程，然后访问PML4，PDE等物理地址时，都会触发一个EPT的转换，这也是VT开启EPT后性能损耗的原因之一，关于EPT各个表项的内容可以查看参考 Intel-64-ia-32&ndash;system-programming-manual-vol-3 Chapter 28.2
 EPT的构建 EPT的构建，感觉就是实现一个具体的地址转换的过程，从EPTP的构建，以及其中PML4,PDPT,PDT其中各个表项的各个字段的填写
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16  pEptState-&gt;EptPageTable = PageTable; PageTable-&gt;PML4[0].all = 0; PageTable-&gt;PML4[0].Bits.read_access = 1; PageTable-&gt;PML4[0].Bits.write_access = 1; PageTable-&gt;PML4[0].Bits.exec_access_supervisor = 1; PageTable-&gt;PML4[0].Bits.PDPTPFN = MmGetPhysicalAddress(&amp;PageTable-&gt;PML3[0]).QuadPart &gt;&gt; 12; for (int i = 0; i &lt; VMM_EPT_PML3E_COUNT; i++) { PageTable-&gt;PML3[i].all = 0; PageTable-&gt;PML3[i].]]></description>
-</item><item>
-    <title>Windows BIOS MBR引导分析</title>
-    <link>https://jhinxs.com/windows-bios-mbr%E5%BC%95%E5%AF%BC%E5%88%86%E6%9E%90/</link>
-    <pubDate>Wed, 02 Mar 2022 15:22:06 &#43;0800</pubDate>
-    <author>Author</author>
-    <guid>https://jhinxs.com/windows-bios-mbr%E5%BC%95%E5%AF%BC%E5%88%86%E6%9E%90/</guid>
-    <description><![CDATA[流程概述 Windows BIOS开机引导流程概览：
- 1.开机主板加电，BIOS运行 2.运行硬盘开头的MBR代码 3.MBR代码引导运行Bootmgr（也有可能引导VBR，然后VBR引导Bootmgr） 4.Bootmgr根据BCD配置，自动运行或让用户选择不同的启动项，并加载运行Winload.exe 5.Winload.exe加载ntoskrnl.exe内核模块 6.ntoskrnl.exe启动操作系统  MBR与VBR结构概览 
-MBR MBR主引导记录，用于引导后续运行的代码，一般用作引导bootmgr等第二阶段的引导程序
-MBR一般位于每块硬盘的最开头的512个字节，也就是一个扇区的大小，其中前446个字节为引导程序，然后是64个字节的分区表，其中每个分区项为16个字节，最后是2个字节的Magic,统一为0X55,0XAA,操作系统用此Magic确定和查找引导记录，如果没有，则无法进行引导。
-其中446个字节的引导程序中：
-  前162个字节为MBR可执行代码
-  163-1B2这80个字节为错误信息字符串
-  1B3-1BD这11字节包含2个byte 00 padding,3个字节63 7B 9A分别代表了错误信息字符串的offset，然后是4个字节的磁盘签名，然后是2个字节的padding
-  磁盘签名可以通过注册表查看：reg query HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
-  MBR结构 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21  //主引导记录 typedef struct _MASTER_BOOT_RECORD { CHAR bootcode[446]; //实际的引导代码 	MBR_PARTITION_TABLE partitiontable[4]; //分区表 	USHORT MBRMagic; // 0x55AA }MASTER_BOOT_RECORD,*PMASTER_BOOT_RECORD; //分区表项 typedef struct _MBR_PARTITION_TABLE { BYTE ActiveStatus; //活动状态 0x80=active 0x00=noactive，表示当前分区是否为活动分区，只能有一个活动分区 	BYTE StartHead; WORD StartingSectCylinder; //起始扇区柱面 	BYTE PARTITION_SYSTEMID; //标识ID，指示当前分区的分区类型，比如常见的有：NTFS,FAT32等等 	BYTE EndHead; WORD EndingSectCylinder; DWORD RelativeSector; DWORD TotalSectors; //分区中的总扇区数 }MBR_PARTITION_TABLE,*PMBR_PARTITION_TABLE;   分析MBR代码 MBR的字节码如下图，测试环境为WIN10,21H2]]></description>
 </item><item>
     <title>x64的一些特性</title>
     <link>https://jhinxs.com/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/</link>

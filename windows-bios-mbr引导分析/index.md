@@ -55,7 +55,7 @@ typedef struct _MBR_PARTITION_TABLE
 #### 分析MBR代码
 
 MBR的字节码如下图，测试环境为WIN10,21H2  
-[<img src="/images/assets/post6/mbrhex.PNG" width="100%"/>](/images/assets/post6/mbrhex.PNG)
+[<img src="/images/assets/post6/mbrhex.png" width="100%"/>](/images/assets/post6/mbrhex.png)
 IDA静态分析：
 ```asm
 seg000:7C00                         seg000          segment byte public 'CODE' use16
