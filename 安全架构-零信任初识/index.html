@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>安全架构-零信任初识 - Jhin&#39;s Story</title><meta name="Description" content="Jhinxs"><meta property="og:title" content="安全架构-零信任初识" />
+<meta property="og:description" content="背景 个人理解，传统的企业网络安全架构中，主要存在内外网界限划分的概念，而且大部分时间，防护重点主要放在对抗来自外网的威胁，凡是来自外部的请求默认会被判定为恶意。但是在内网，虽然会使用一定的安全设备和策略进行一定的防护，但是大部分情况下，对来自内部的请求默认是可信的，不会像外网那样设置多重的如身份认证，鉴权等细化的防护策略。所以以往，入侵者进去内网之后，利用获取到的部分凭证，大部分情况下，可随意进行内网渗透，获取更多的数据和权限。而零信任的诞生，则是为了彻底杜绝这种情况，逻辑上舍弃传统的内外网划分（并不一定是在网络架构上放弃内外网的网络架构，完全推倒重来），以多种维度为认证属性的身份作为认证的标准，将身份和权限作为新的边界。
+零信任的技术标准 这里主要简单介绍一下国际云安全联盟CSA发布的SDP(软件定义边界)以及美国国家标准技术研究所(NIST)发布的的零信任标准。
+SDP CSA在2014年发布了SDP技术标准，软件定义边界是指通过在每个用户的设备上安装客户端软件，也即Agent,用作身份校验。通过验证则可以访问对应的资源，这样在逻辑上形成一种网络边界，相对于传统的网络架构，不再通过传统内外网的形式划分网络边界。
+
+SDP的主要组件有三个：
+ SDP客户端：负责在用户登录时，传输所需认证的身份信息以及业务请求信息。 SDP管控端：验证用户的身份，向网关下发访问控制策略 SDP安全网关：负责访问控制，接受SDP管控端发来的策略并执行。  工作流程：
+ SDP客户端登录，登录请求被SDP管控端接受，通过其中的身份验证信息进行验证。 身份验证通过后，管控端向客户端发送用户可访问的SDP网关信息。 客户端与SDP网关建立安全加密的数据通道，用于传输后续的访问业务的流量，用户发起的业务请求会经过客户端转发给SDP安全网关。 SDP网关会根据请求中的用户信息以及访问控制策略，进行权限校验并将请求转发到后端对应的业务系统中去。  SPA单包授权 传统的网络架构中，设备或者业务系统支持在验证通过前即可访问，访问者身份无法验明，所以容易产生访问控制机制被绕过的情况。而SPA技术，SDP网关默认不对外开放端口，所有未经过认证的请求将全部被丢弃，从而实现&quot;隐身&quot;效果。 SPA过程：
+ SDP客户端和SDP网关建立通信之前，首先发送一个认证数据包，这个认证数据包中带有身份信息和需要访问的目的地信息。 SPD网关接受到认证数据包后，将解析并验证身份，根据策略检查目的地能否被当前用户访问。 如果通过检查，那么网关则会给用户放行对应的网络通路，如添加一条防火墙放行策略。 通过SPA认证后，后续的业务流量，SDP网关将转发给对应的业务系统。  SDP适用场景 通过Agent可以实现对用户设备的安全控制，防护效果更为严密，但也就意味着，公开的一些网站无法使用SDP,更加适合用于在集团公司的访问控制，例如：分支机构接入等场景
+NIST零信任架构 美国国家标准技术研究所发布《零信任架构ZTA》标准，是目前比较权威的零信任架构标准。 零信任架构的设计和部署遵循以下基本原则：
+ 所有数据源和计算服务均被视为资源。 无论网络位置如何，所有通信都必须是安全的。 对企业资源的访问授权是基于每个连接的。 对资源的访问权限由动态策略（包括客户身份、应用和请求资产的可观测状态）决定，也可能包括其他行为属性。 企业应该监控并且测量其所有自有或关联的资产的完整性和安全态势。 所有资源的身份认证和授权是动态的，并且在资源访问被允许之前严格强制实施。 企业应该尽可能收集关于资产、网络基础设施和通信的当前状态信息,并将其应用于改善网络安全态势。  ZTA框架模型 
+以上组件的具体描述：
+ 策略引擎（Policy Engine）:负责访问控制，决定主体是否有权访问资源，策略引擎可以使用多种维度的情报作为输入，用于策略的指定，以决定授予或拒绝对该资源的访问。 策略管理（Policy Administrator）: 负责管理用于用户身份认证的令牌凭据以及建立会话，依赖于策略引擎的输出，并通知PEP创建或者关闭会话。 策略执行点（Policy Enforcement Point）: 负责启用、监视并最终终止访问主体和企业资源之间的连接。PEP与PA通信，接受PA的策略指示，建立和关闭会话。  零信任的组件 零信任安全网关 无论是SDP,ZTA,零信任网关是零信任架构的核心之一，负责实施访问控制，用户流量的转发等主要功能。
+Web 代理网关 web代理网关顾名思义，只对Web请求做代理转发，只支持Web网站的接入，对于客户端类应用则无法起作用。
+主要功能：
+ 获取身份 客户端在发起请求的时候，会在请求数据包头部加入代表用户身份的Token，代理网关可以解析数据包头，获取到验证身份所需的身份信息进行校验。 验证身份：将身份信息转发给PA等管控平台，管控平台验证后将结果发送回网关。 代理转发： 这里的基本的流量代理转发功能，和平常的代理转发类似，将后端的业务域名DNS解析到Web代理网关的IP地址，用户访问业务系统域名的时候，会跳转到Web网关之上，网关会解析用户想要访问的业务系统的地址，当通过身份认证后，则会将流量转发到对应的服务器上。  Tunnel 隧道网关 前面说到，Web代理网关无法支持客户端类的C/S应用，意味着无法覆盖所有的应用访问场景，例如SSH,RDP,企业软件升级等等。 隧道网关的实现，可以使用VPN技术来实现，通过设置虚拟网卡，拦截网络流量，流量转发给网关之后，进行身份与权限校验，将合法的流量转发到对应的服务器上。 隧道网关相比于Web代理网关，可以覆盖更多的场景，但是性能可能不如Web代理网关，在对流量的管控粒度上，可能也不如Web网关细致，实际中，可以将两种网关进行互补部署，取长补短。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://jhinxs.com/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86/" /><meta property="og:image" content="https://jhinxs.com/images/jhin.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-02-05T14:02:16+08:00" />
+<meta property="article:modified_time" content="2022-02-05T14:02:16+08:00" />
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://jhinxs.com/images/jhin.png"/>
+
+<meta name="twitter:title" content="安全架构-零信任初识"/>
+<meta name="twitter:description" content="背景 个人理解，传统的企业网络安全架构中，主要存在内外网界限划分的概念，而且大部分时间，防护重点主要放在对抗来自外网的威胁，凡是来自外部的请求默认会被判定为恶意。但是在内网，虽然会使用一定的安全设备和策略进行一定的防护，但是大部分情况下，对来自内部的请求默认是可信的，不会像外网那样设置多重的如身份认证，鉴权等细化的防护策略。所以以往，入侵者进去内网之后，利用获取到的部分凭证，大部分情况下，可随意进行内网渗透，获取更多的数据和权限。而零信任的诞生，则是为了彻底杜绝这种情况，逻辑上舍弃传统的内外网划分（并不一定是在网络架构上放弃内外网的网络架构，完全推倒重来），以多种维度为认证属性的身份作为认证的标准，将身份和权限作为新的边界。
+零信任的技术标准 这里主要简单介绍一下国际云安全联盟CSA发布的SDP(软件定义边界)以及美国国家标准技术研究所(NIST)发布的的零信任标准。
+SDP CSA在2014年发布了SDP技术标准，软件定义边界是指通过在每个用户的设备上安装客户端软件，也即Agent,用作身份校验。通过验证则可以访问对应的资源，这样在逻辑上形成一种网络边界，相对于传统的网络架构，不再通过传统内外网的形式划分网络边界。
+
+SDP的主要组件有三个：
+ SDP客户端：负责在用户登录时，传输所需认证的身份信息以及业务请求信息。 SDP管控端：验证用户的身份，向网关下发访问控制策略 SDP安全网关：负责访问控制，接受SDP管控端发来的策略并执行。  工作流程：
+ SDP客户端登录，登录请求被SDP管控端接受，通过其中的身份验证信息进行验证。 身份验证通过后，管控端向客户端发送用户可访问的SDP网关信息。 客户端与SDP网关建立安全加密的数据通道，用于传输后续的访问业务的流量，用户发起的业务请求会经过客户端转发给SDP安全网关。 SDP网关会根据请求中的用户信息以及访问控制策略，进行权限校验并将请求转发到后端对应的业务系统中去。  SPA单包授权 传统的网络架构中，设备或者业务系统支持在验证通过前即可访问，访问者身份无法验明，所以容易产生访问控制机制被绕过的情况。而SPA技术，SDP网关默认不对外开放端口，所有未经过认证的请求将全部被丢弃，从而实现&quot;隐身&quot;效果。 SPA过程：
+ SDP客户端和SDP网关建立通信之前，首先发送一个认证数据包，这个认证数据包中带有身份信息和需要访问的目的地信息。 SPD网关接受到认证数据包后，将解析并验证身份，根据策略检查目的地能否被当前用户访问。 如果通过检查，那么网关则会给用户放行对应的网络通路，如添加一条防火墙放行策略。 通过SPA认证后，后续的业务流量，SDP网关将转发给对应的业务系统。  SDP适用场景 通过Agent可以实现对用户设备的安全控制，防护效果更为严密，但也就意味着，公开的一些网站无法使用SDP,更加适合用于在集团公司的访问控制，例如：分支机构接入等场景
+NIST零信任架构 美国国家标准技术研究所发布《零信任架构ZTA》标准，是目前比较权威的零信任架构标准。 零信任架构的设计和部署遵循以下基本原则：
+ 所有数据源和计算服务均被视为资源。 无论网络位置如何，所有通信都必须是安全的。 对企业资源的访问授权是基于每个连接的。 对资源的访问权限由动态策略（包括客户身份、应用和请求资产的可观测状态）决定，也可能包括其他行为属性。 企业应该监控并且测量其所有自有或关联的资产的完整性和安全态势。 所有资源的身份认证和授权是动态的，并且在资源访问被允许之前严格强制实施。 企业应该尽可能收集关于资产、网络基础设施和通信的当前状态信息,并将其应用于改善网络安全态势。  ZTA框架模型 
+以上组件的具体描述：
+ 策略引擎（Policy Engine）:负责访问控制，决定主体是否有权访问资源，策略引擎可以使用多种维度的情报作为输入，用于策略的指定，以决定授予或拒绝对该资源的访问。 策略管理（Policy Administrator）: 负责管理用于用户身份认证的令牌凭据以及建立会话，依赖于策略引擎的输出，并通知PEP创建或者关闭会话。 策略执行点（Policy Enforcement Point）: 负责启用、监视并最终终止访问主体和企业资源之间的连接。PEP与PA通信，接受PA的策略指示，建立和关闭会话。  零信任的组件 零信任安全网关 无论是SDP,ZTA,零信任网关是零信任架构的核心之一，负责实施访问控制，用户流量的转发等主要功能。
+Web 代理网关 web代理网关顾名思义，只对Web请求做代理转发，只支持Web网站的接入，对于客户端类应用则无法起作用。
+主要功能：
+ 获取身份 客户端在发起请求的时候，会在请求数据包头部加入代表用户身份的Token，代理网关可以解析数据包头，获取到验证身份所需的身份信息进行校验。 验证身份：将身份信息转发给PA等管控平台，管控平台验证后将结果发送回网关。 代理转发： 这里的基本的流量代理转发功能，和平常的代理转发类似，将后端的业务域名DNS解析到Web代理网关的IP地址，用户访问业务系统域名的时候，会跳转到Web网关之上，网关会解析用户想要访问的业务系统的地址，当通过身份认证后，则会将流量转发到对应的服务器上。  Tunnel 隧道网关 前面说到，Web代理网关无法支持客户端类的C/S应用，意味着无法覆盖所有的应用访问场景，例如SSH,RDP,企业软件升级等等。 隧道网关的实现，可以使用VPN技术来实现，通过设置虚拟网卡，拦截网络流量，流量转发给网关之后，进行身份与权限校验，将合法的流量转发到对应的服务器上。 隧道网关相比于Web代理网关，可以覆盖更多的场景，但是性能可能不如Web代理网关，在对流量的管控粒度上，可能也不如Web网关细致，实际中，可以将两种网关进行互补部署，取长补短。"/>
+<meta name="application-name" content="LoveIt">
+<meta name="apple-mobile-web-app-title" content="LoveIt"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://jhinxs.com/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86/" /><link rel="prev" href="https://jhinxs.com/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" /><link rel="next" href="https://jhinxs.com/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"><link rel="stylesheet" href="/lib/animate/animate.min.css"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "安全架构-零信任初识",
+        "inLanguage": "en",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/jhinxs.com\/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86\/"
+        },"image": ["https:\/\/jhinxs.com\/jhin.png"],"genre": "posts","keywords": "Network Security, BeyondCorp, Security architecture","wordcount":  110 ,
+        "url": "https:\/\/jhinxs.com\/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86\/","datePublished": "2022-02-05T14:02:16+08:00","dateModified": "2022-02-05T14:02:16+08:00","license": "jhinxs story","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/jhinxs.com\/jhin.png"},"author": {
+                "@type": "Person",
+                "name": "jhinxs"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="fixed" header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('auto' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'auto' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="Jhin&#39;s Story"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw'></i></span>Jhinxs</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> Posts </a><a class="menu-item" href="/tags/"> Tags </a><a class="menu-item" href="/categories/"> Categories </a><a class="menu-item" href="/about/"> About </a><a class="menu-item" href="https://github.com/Jhinxs" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw'></i>  </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="Search titles or contents..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="Search">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="Clear">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="Switch Theme">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="Jhin&#39;s Story"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw'></i></span>Jhinxs</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="Search titles or contents..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="Search">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="Clear">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        Cancel
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">Posts</a><a class="menu-item" href="/tags/" title="">Tags</a><a class="menu-item" href="/categories/" title="">Categories</a><a class="menu-item" href="/about/" title="">About</a><a class="menu-item" href="https://github.com/Jhinxs" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw'></i></a><a href="javascript:void(0);" class="menu-item theme-switch" title="Switch Theme">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">Contents</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">安全架构-零信任初识</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-category">included in <a href="/categories/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84network/"><i class="far fa-folder fa-fw"></i>安全架构，network</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2022-02-05">2022-02-05</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;110 words&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;One minute&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>Contents</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#背景">背景</a></li>
+    <li><a href="#零信任的技术标准">零信任的技术标准</a>
+      <ul>
+        <li><a href="#sdp">SDP</a>
+          <ul>
+            <li><a href="#spa单包授权">SPA单包授权</a></li>
+            <li><a href="#sdp适用场景">SDP适用场景</a></li>
+          </ul>
+        </li>
+        <li><a href="#nist零信任架构">NIST零信任架构</a>
+          <ul>
+            <li><a href="#zta框架模型">ZTA框架模型</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+    <li><a href="#零信任的组件">零信任的组件</a>
+      <ul>
+        <li><a href="#零信任安全网关">零信任安全网关</a>
+          <ul>
+            <li><a href="#web-代理网关">Web 代理网关</a></li>
+            <li><a href="#tunnel-隧道网关">Tunnel 隧道网关</a></li>
+            <li><a href="#api-网关">API 网关</a></li>
+          </ul>
+        </li>
+        <li><a href="#权限引擎">权限引擎</a></li>
+        <li><a href="#微隔离">微隔离</a>
+          <ul>
+            <li><a href="#微隔离的功能">微隔离的功能</a></li>
+          </ul>
+        </li>
+        <li><a href="#身份管理">身份管理</a>
+          <ul>
+            <li><a href="#统一身份认证">统一身份认证</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h2 id="背景">背景</h2>
+<p>个人理解，传统的企业网络安全架构中，主要存在内外网界限划分的概念，而且大部分时间，防护重点主要放在对抗来自外网的威胁，凡是来自外部的请求默认会被判定为恶意。但是在内网，虽然会使用一定的安全设备和策略进行一定的防护，但是大部分情况下，对来自内部的请求默认是可信的，不会像外网那样设置多重的如身份认证，鉴权等细化的防护策略。所以以往，入侵者进去内网之后，利用获取到的部分凭证，大部分情况下，可随意进行内网渗透，获取更多的数据和权限。而零信任的诞生，则是为了彻底杜绝这种情况，逻辑上舍弃传统的内外网划分（并不一定是在网络架构上放弃内外网的网络架构，完全推倒重来），以多种维度为认证属性的身份作为认证的标准，将身份和权限作为新的边界。</p>
+<h2 id="零信任的技术标准">零信任的技术标准</h2>
+<p>这里主要简单介绍一下国际云安全联盟CSA发布的SDP(软件定义边界)以及美国国家标准技术研究所(NIST)发布的的零信任标准。</p>
+<h3 id="sdp">SDP</h3>
+<p>CSA在2014年发布了SDP技术标准，软件定义边界是指通过在每个用户的设备上安装客户端软件，也即Agent,用作身份校验。通过验证则可以访问对应的资源，这样在逻辑上形成一种网络边界，相对于传统的网络架构，不再通过传统内外网的形式划分网络边界。<br>
+<a href="/images/assets/post7/sdp.png" rel=""><img src="/images/assets/post7/sdp.png" width="100%"/></a><br>
+SDP的主要组件有三个：</p>
+<ul>
+<li>SDP客户端：负责在用户登录时，传输所需认证的身份信息以及业务请求信息。</li>
+<li>SDP管控端：验证用户的身份，向网关下发访问控制策略</li>
+<li>SDP安全网关：负责访问控制，接受SDP管控端发来的策略并执行。</li>
+</ul>
+<p>工作流程：</p>
+<ol>
+<li>SDP客户端登录，登录请求被SDP管控端接受，通过其中的身份验证信息进行验证。</li>
+<li>身份验证通过后，管控端向客户端发送用户可访问的SDP网关信息。</li>
+<li>客户端与SDP网关建立安全加密的数据通道，用于传输后续的访问业务的流量，用户发起的业务请求会经过客户端转发给SDP安全网关。</li>
+<li>SDP网关会根据请求中的用户信息以及访问控制策略，进行权限校验并将请求转发到后端对应的业务系统中去。</li>
+</ol>
+<h4 id="spa单包授权">SPA单包授权</h4>
+<p>传统的网络架构中，设备或者业务系统支持在验证通过前即可访问，访问者身份无法验明，所以容易产生访问控制机制被绕过的情况。而SPA技术，SDP网关默认不对外开放端口，所有未经过认证的请求将全部被丢弃，从而实现&quot;隐身&quot;效果。
+SPA过程：</p>
+<ol>
+<li>SDP客户端和SDP网关建立通信之前，首先发送一个认证数据包，这个认证数据包中带有身份信息和需要访问的目的地信息。</li>
+<li>SPD网关接受到认证数据包后，将解析并验证身份，根据策略检查目的地能否被当前用户访问。</li>
+<li>如果通过检查，那么网关则会给用户放行对应的网络通路，如添加一条防火墙放行策略。</li>
+<li>通过SPA认证后，后续的业务流量，SDP网关将转发给对应的业务系统。</li>
+</ol>
+<h4 id="sdp适用场景">SDP适用场景</h4>
+<p>通过Agent可以实现对用户设备的安全控制，防护效果更为严密，但也就意味着，公开的一些网站无法使用SDP,更加适合用于在集团公司的访问控制，例如：分支机构接入等场景</p>
+<h3 id="nist零信任架构">NIST零信任架构</h3>
+<p>美国国家标准技术研究所发布《零信任架构ZTA》标准，是目前比较权威的零信任架构标准。
+零信任架构的设计和部署遵循以下基本原则：</p>
+<ol>
+<li>所有数据源和计算服务均被视为资源。</li>
+<li>无论网络位置如何，所有通信都必须是安全的。</li>
+<li>对企业资源的访问授权是基于每个连接的。</li>
+<li>对资源的访问权限由动态策略（包括客户身份、应用和请求资产的可观测状态）决定，也可能包括其他行为属性。</li>
+<li>企业应该监控并且测量其所有自有或关联的资产的完整性和安全态势。</li>
+<li>所有资源的身份认证和授权是动态的，并且在资源访问被允许之前严格强制实施。</li>
+<li>企业应该尽可能收集关于资产、网络基础设施和通信的当前状态信息,并将其应用于改善网络安全态势。</li>
+</ol>
+<h4 id="zta框架模型">ZTA框架模型</h4>
+<p><a href="/images/assets/post7/zta.png" rel=""><img src="/images/assets/post7/zta.png" width="100%"/></a><br>
+以上组件的具体描述：</p>
+<ul>
+<li>策略引擎（Policy Engine）:负责访问控制，决定主体是否有权访问资源，策略引擎可以使用多种维度的情报作为输入，用于策略的指定，以决定授予或拒绝对该资源的访问。</li>
+<li>策略管理（Policy Administrator）: 负责管理用于用户身份认证的令牌凭据以及建立会话，依赖于策略引擎的输出，并通知PEP创建或者关闭会话。</li>
+<li>策略执行点（Policy Enforcement Point）: 负责启用、监视并最终终止访问主体和企业资源之间的连接。PEP与PA通信，接受PA的策略指示，建立和关闭会话。</li>
+</ul>
+<h2 id="零信任的组件">零信任的组件</h2>
+<h3 id="零信任安全网关">零信任安全网关</h3>
+<p>无论是SDP,ZTA,零信任网关是零信任架构的核心之一，负责实施访问控制，用户流量的转发等主要功能。</p>
+<h4 id="web-代理网关">Web 代理网关</h4>
+<p>web代理网关顾名思义，只对Web请求做代理转发，只支持Web网站的接入，对于客户端类应用则无法起作用。<br>
+主要功能：</p>
+<ol>
+<li>获取身份
+客户端在发起请求的时候，会在请求数据包头部加入代表用户身份的Token，代理网关可以解析数据包头，获取到验证身份所需的身份信息进行校验。</li>
+<li>验证身份：将身份信息转发给PA等管控平台，管控平台验证后将结果发送回网关。</li>
+<li>代理转发：
+这里的基本的流量代理转发功能，和平常的代理转发类似，将后端的业务域名DNS解析到Web代理网关的IP地址，用户访问业务系统域名的时候，会跳转到Web网关之上，网关会解析用户想要访问的业务系统的地址，当通过身份认证后，则会将流量转发到对应的服务器上。</li>
+</ol>
+<h4 id="tunnel-隧道网关">Tunnel 隧道网关</h4>
+<p>前面说到，Web代理网关无法支持客户端类的C/S应用，意味着无法覆盖所有的应用访问场景，例如SSH,RDP,企业软件升级等等。
+隧道网关的实现，可以使用VPN技术来实现，通过设置虚拟网卡，拦截网络流量，流量转发给网关之后，进行身份与权限校验，将合法的流量转发到对应的服务器上。
+隧道网关相比于Web代理网关，可以覆盖更多的场景，但是性能可能不如Web代理网关，在对流量的管控粒度上，可能也不如Web网关细致，实际中，可以将两种网关进行互补部署，取长补短。<br>
+<a href="/images/assets/post7/wangguan.png" rel=""><img src="/images/assets/post7/wangguan.png" width="100%"/></a></p>
+<h4 id="api-网关">API 网关</h4>
+<p>主要场景在，当服务器和服务器之间进行通信，访问目标服务器的API的情况下。</p>
+<ol>
+<li>通过网关的身份认证，和Web代理网关类似。</li>
+<li>API网关可以对API进行安全检查，检查是否存在sql注入等恶意请求，当分析出为恶意请求时，可以实时拦截。</li>
+<li>API网关将正常的流量转发给对应的服务器。</li>
+</ol>
+<h3 id="权限引擎">权限引擎</h3>
+<p>之前说过，策略引擎是决定访问主体是否有权访问资源的核心组件，零信任的认证过程不是单次有效，而是持续校验动态变化的过程，其依赖便是权限引擎。<br>
+<a href="/images/assets/post7/pe.png" rel=""><img src="/images/assets/post7/pe.png" width="100%"/></a></p>
+<ol>
+<li>策略管理：管理员可以实时的配置和管理策略。</li>
+<li>策略引擎：策略引擎可以根据用户身份以及要访问的资源，可以匹配出所有策略，以最小原则为准，例如10条策略中，但凡有一条不允许，那么整体结果则禁止访问。权限引擎还应该对策略进行交叉计算，满足策略的交集才可放行。</li>
+<li>策略引擎的数据来源：这些都是策略引擎的依赖，例如身份大数据，设备清单信息，服务器信息等等，还可以接入威胁情报等数据源，全方位综合的进行数据分析。</li>
+</ol>
+<h3 id="微隔离">微隔离</h3>
+<p>零信任安全网关阻止南北向的攻击流量，而利用微隔离，则可以通过策略限制东西向的流量，传统的网络安全架构一大痛点问题，入侵人员攻陷一台服务器后，利用服务器在业务区横向移动，一般情况下业务系统，通常会被置于白名单，而且大多数服务器密码通用或者使用了大量的弱密码，导致更加难以遏制攻击行动，很多时候只能采取停机断网等措施，对业务难免产生影响。</p>
+<h4 id="微隔离的功能">微隔离的功能</h4>
+<p>通过在每个服务器上安装微隔离组件，服务器之间通过微隔离组件加密通信，而微隔离组件会对彼此的访问请求做细粒度的校验。<br>
+<a href="/images/assets/post7/weigeli.PNG" rel=""><img src="/images/assets/post7/weigeli.PNG" width="100%"/></a></p>
+<ol>
+<li>集中管控：零信任管控平台，可以对微隔离组件进行统一管理，如下发策略，证书，身份认证校验。</li>
+<li>身份认证：服务器可以通过PKI证书进行认证，认证通过后可以访问自己可访问的服务器。</li>
+<li>安全环境感知：对服务器进行安全检测，组织风险服务器接入网络。</li>
+<li>端口管理：可以管控服务器的开放端口，关闭不必要的端口。</li>
+<li>外连管理：管理服务器进程的通信，如发现进程异常外连则触发告警或者采取其他措施。</li>
+<li>服务器之间通信校验过程：双方服务器通信之前交换凭证验证身份，识别通信的来源，只有确认发起连接的身份合法后，才建立通信。</li>
+<li>通信过程全程加密。</li>
+</ol>
+<p>微隔离关键理念：</p>
+<ul>
+<li>缩小内部服务器攻击面，阻止被入侵后的横向运动。</li>
+<li>持续验证，用不信任，对流量持续监控以及权限校验，发现一条异常，立马采取防护措施。</li>
+<li>最小权限原则，对主机进行白名单限制，细粒度到进程级别。</li>
+</ul>
+<h3 id="身份管理">身份管理</h3>
+<p>身份认证管理和认证是零信任实施访问控制的基础和核心，广泛而高质量的身份大数据为零信任的策略提供信息支撑。<br>
+1）身份数据：零信任的身份数据来源可以是多源的，可以从企业的HR系统，业务系统，设备清单库等地方同步数据。<br>
+2）全面身份化：为人，设备，应用，服务，建立身份，并且权限要根据身份周期的变化动态监控变化，例如员工入职，离职，调岗等。<br>
+3）身份分析：在身份管理的长期运营中，会出现一些配置方面的隐患异常：例如：无效账号，违规账号，重复账号，在权限方面也会出现如无效权限，异常授权，权限过大等风险，也需要定期进行自动或者人工调整。</p>
+<h4 id="统一身份认证">统一身份认证</h4>
+<p>零信任实施后，身份由零信任系统进行统一认证和管理：、</p>
+<ul>
+<li>零信任的身份认证可以延伸到网络层，未经认证无法访问和连接。</li>
+<li>身份系统汇聚多源系统的身份数据，进行统一的身份治理分析。</li>
+<li>零信任系统可以基于风险进行自适应的认证策略，持续监控，动态调整。</li>
+</ul>
+<p>传统认证基于账户密码单一认证，只校验正确性，没用对账号进行风险分析，例如接入设备是否安全等。
+零信任的自适应认证策略，在用户登录前进行风险分析，例如设备是否可信，登录地址是否有变化，登录系统是否为高敏感系统等等方面。同时也可以自定义自适应认证的策略，哪些系统必须需要二次认证，哪些系统登录必须审批报备等。<br>
+以下是常见的认证方式：</p>
+<ul>
+<li>账户密码认证：密码通常被认为是不安全的，容易被窃取。</li>
+<li>邮件认证：用户的邮箱是安全的关键点。</li>
+<li>动态口令：适用于二次认证，通常可以是几位数字，定时动态变化。</li>
+<li>扫描认证：一般和手机APP绑定，用户自主确认是否进行登录。</li>
+<li>硬件认证：例如U盾等设备</li>
+<li>生物识别：指纹，人脸识别</li>
+<li>数字认证：在设备上安全证书，服务器可对客户端证书进行校验。</li>
+</ul>
+<p>零信任采用SSO进行认证登录，首先跳转到零信任管控平台认证，然后跳转到业务系统，只需一次校验，在整个访问过程中，持续监控，发现风险进行报警阻断等措施。<br>
+<a href="/images/assets/post7/sso.PNG" rel=""><img src="/images/assets/post7/sso.PNG" width="100%"/></a></p>
+<p>后续。。。。。。</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>Updated on 2022-02-05</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86/index.md" target="_blank">Read Markdown</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="Share on Twitter" data-sharer="twitter" data-url="https://jhinxs.com/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86/" data-title="安全架构-零信任初识" data-via="realDonaldTrump" data-hashtags="Network Security,BeyondCorp,Security architecture"><i class="fab fa-twitter fa-fw"></i></a><a href="javascript:void(0);" title="Share on Facebook" data-sharer="facebook" data-url="https://jhinxs.com/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86/" data-hashtag="Network Security"><i class="fab fa-facebook-square fa-fw"></i></a><a href="javascript:void(0);" title="Share on Hacker News" data-sharer="hackernews" data-url="https://jhinxs.com/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86/" data-title="安全架构-零信任初识"><i class="fab fa-hacker-news fa-fw"></i></a><a href="javascript:void(0);" title="Share on Line" data-sharer="line" data-url="https://jhinxs.com/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86/" data-title="安全架构-零信任初识"><i data-svg-src="/lib/simple-icons/icons/line.min.svg"></i></a><a href="javascript:void(0);" title="Share on 微博" data-sharer="weibo" data-url="https://jhinxs.com/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86/" data-title="安全架构-零信任初识"><i class="fab fa-weibo fa-fw"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/network-security/">Network Security</a>,&nbsp;<a href="/tags/beyondcorp/">BeyondCorp</a>,&nbsp;<a href="/tags/security-architecture/">Security architecture</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">Back</a></span>&nbsp;|&nbsp;<span><a href="/">Home</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/" class="prev" rel="prev" title="x64的一些特性"><i class="fas fa-angle-left fa-fw"></i>x64的一些特性</a>
+            <a href="/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/" class="next" rel="next" title="Intel VT x64 EPT Hook框架的实现">Intel VT x64 EPT Hook框架的实现<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+</article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">jhinxs</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">Jhinxs Story</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="Back to Top">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="View Comments">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><script type="text/javascript" src="/lib/smooth-scroll/smooth-scroll.min.js"></script><script type="text/javascript" src="/lib/autocomplete/autocomplete.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.min.js"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.js"></script><script type="text/javascript" src="/lib/clipboard/clipboard.min.js"></script><script type="text/javascript" src="/lib/sharer/sharer.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"Copy to clipboard","maxShownLines":10},"comment":{},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","maxResultLength":10,"noResultsFound":"No results found","snippetLength":30,"type":"lunr"}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

@@ -152,6 +152,25 @@ EPT的构建 EPT的构建，感觉就是实现一个具体的地址转换的过�
         <a href="/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">Read More</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/kernel/">Kernel</a>,&nbsp;<a href="/tags/vt/">VT</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
+        <a href="/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86/">安全架构-零信任初识</a>
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-publish">published on <time datetime="2022-02-05">2022-02-05</time></span>&nbsp;<span class="post-category">included in <a href="/categories/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84network/"><i class="far fa-folder fa-fw"></i>安全架构，network</a></span></div><div class="content">背景 个人理解，传统的企业网络安全架构中，主要存在内外网界限划分的概念，而且大部分时间，防护重点主要放在对抗来自外网的威胁，凡是来自外部的请求默认会被判定为恶意。但是在内网，虽然会使用一定的安全设备和策略进行一定的防护，但是大部分情况下，对来自内部的请求默认是可信的，不会像外网那样设置多重的如身份认证，鉴权等细化的防护策略。所以以往，入侵者进去内网之后，利用获取到的部分凭证，大部分情况下，可随意进行内网渗透，获取更多的数据和权限。而零信任的诞生，则是为了彻底杜绝这种情况，逻辑上舍弃传统的内外网划分（并不一定是在网络架构上放弃内外网的网络架构，完全推倒重来），以多种维度为认证属性的身份作为认证的标准，将身份和权限作为新的边界。
+零信任的技术标准 这里主要简单介绍一下国际云安全联盟CSA发布的SDP(软件定义边界)以及美国国家标准技术研究所(NIST)发布的的零信任标准。
+SDP CSA在2014年发布了SDP技术标准，软件定义边界是指通过在每个用户的设备上安装客户端软件，也即Agent,用作身份校验。通过验证则可以访问对应的资源，这样在逻辑上形成一种网络边界，相对于传统的网络架构，不再通过传统内外网的形式划分网络边界。
+
+SDP的主要组件有三个：
+ SDP客户端：负责在用户登录时，传输所需认证的身份信息以及业务请求信息。 SDP管控端：验证用户的身份，向网关下发访问控制策略 SDP安全网关：负责访问控制，接受SDP管控端发来的策略并执行。  工作流程：
+ SDP客户端登录，登录请求被SDP管控端接受，通过其中的身份验证信息进行验证。 身份验证通过后，管控端向客户端发送用户可访问的SDP网关信息。 客户端与SDP网关建立安全加密的数据通道，用于传输后续的访问业务的流量，用户发起的业务请求会经过客户端转发给SDP安全网关。 SDP网关会根据请求中的用户信息以及访问控制策略，进行权限校验并将请求转发到后端对应的业务系统中去。  SPA单包授权 传统的网络架构中，设备或者业务系统支持在验证通过前即可访问，访问者身份无法验明，所以容易产生访问控制机制被绕过的情况。而SPA技术，SDP网关默认不对外开放端口，所有未经过认证的请求将全部被丢弃，从而实现&quot;隐身&quot;效果。 SPA过程：
+ SDP客户端和SDP网关建立通信之前，首先发送一个认证数据包，这个认证数据包中带有身份信息和需要访问的目的地信息。 SPD网关接受到认证数据包后，将解析并验证身份，根据策略检查目的地能否被当前用户访问。 如果通过检查，那么网关则会给用户放行对应的网络通路，如添加一条防火墙放行策略。 通过SPA认证后，后续的业务流量，SDP网关将转发给对应的业务系统。  SDP适用场景 通过Agent可以实现对用户设备的安全控制，防护效果更为严密，但也就意味着，公开的一些网站无法使用SDP,更加适合用于在集团公司的访问控制，例如：分支机构接入等场景
+NIST零信任架构 美国国家标准技术研究所发布《零信任架构ZTA》标准，是目前比较权威的零信任架构标准。 零信任架构的设计和部署遵循以下基本原则：
+ 所有数据源和计算服务均被视为资源。 无论网络位置如何，所有通信都必须是安全的。 对企业资源的访问授权是基于每个连接的。 对资源的访问权限由动态策略（包括客户身份、应用和请求资产的可观测状态）决定，也可能包括其他行为属性。 企业应该监控并且测量其所有自有或关联的资产的完整性和安全态势。 所有资源的身份认证和授权是动态的，并且在资源访问被允许之前严格强制实施。 企业应该尽可能收集关于资产、网络基础设施和通信的当前状态信息,并将其应用于改善网络安全态势。  ZTA框架模型 
+以上组件的具体描述：
+ 策略引擎（Policy Engine）:负责访问控制，决定主体是否有权访问资源，策略引擎可以使用多种维度的情报作为输入，用于策略的指定，以决定授予或拒绝对该资源的访问。 策略管理（Policy Administrator）: 负责管理用于用户身份认证的令牌凭据以及建立会话，依赖于策略引擎的输出，并通知PEP创建或者关闭会话。 策略执行点（Policy Enforcement Point）: 负责启用、监视并最终终止访问主体和企业资源之间的连接。PEP与PA通信，接受PA的策略指示，建立和关闭会话。  零信任的组件 零信任安全网关 无论是SDP,ZTA,零信任网关是零信任架构的核心之一，负责实施访问控制，用户流量的转发等主要功能。
+Web 代理网关 web代理网关顾名思义，只对Web请求做代理转发，只支持Web网站的接入，对于客户端类应用则无法起作用。
+主要功能：
+ 获取身份 客户端在发起请求的时候，会在请求数据包头部加入代表用户身份的Token，代理网关可以解析数据包头，获取到验证身份所需的身份信息进行校验。 验证身份：将身份信息转发给PA等管控平台，管控平台验证后将结果发送回网关。 代理转发： 这里的基本的流量代理转发功能，和平常的代理转发类似，将后端的业务域名DNS解析到Web代理网关的IP地址，用户访问业务系统域名的时候，会跳转到Web网关之上，网关会解析用户想要访问的业务系统的地址，当通过身份认证后，则会将流量转发到对应的服务器上。  Tunnel 隧道网关 前面说到，Web代理网关无法支持客户端类的C/S应用，意味着无法覆盖所有的应用访问场景，例如SSH,RDP,企业软件升级等等。 隧道网关的实现，可以使用VPN技术来实现，通过设置虚拟网卡，拦截网络流量，流量转发给网关之后，进行身份与权限校验，将合法的流量转发到对应的服务器上。 隧道网关相比于Web代理网关，可以覆盖更多的场景，但是性能可能不如Web代理网关，在对流量的管控粒度上，可能也不如Web网关细致，实际中，可以将两种网关进行互补部署，取长补短。</div><div class="post-footer">
+        <a href="/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86/">Read More</a><div class="post-tags">
+                <i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/network-security/">Network Security</a>,&nbsp;<a href="/tags/beyondcorp/">BeyondCorp</a>,&nbsp;<a href="/tags/security-architecture/">Security architecture</a></div></div>
+</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/">x64的一些特性</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-publish">published on <time datetime="2021-08-21">2021-08-21</time></span>&nbsp;<span class="post-category">included in <a href="/categories/windows-os/"><i class="far fa-folder fa-fw"></i>Windows OS</a></span></div><div class="content">寄存器 首先是寄存器数值的宽度，除去标志寄存器和段寄存器(段寄存器长度均为96位，其中有16位的可见部分和80位的不可见部分)外，均为8个字节64位宽度，在32位平台的基础上，增加了R8~R15共8个寄存器
 
@@ -175,22 +194,17 @@ FS则继续给Wow64提供服务，也就是32位的应用程序
  In 64-bit mode, segmentation is generally (but not completely) disabled, creating a flat 64-bit linear-address space.</div><div class="post-footer">
         <a href="/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/">Read More</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/os/">OS</a></div></div>
-</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">Intel VT-x mini VT 框架的实现</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-publish">published on <time datetime="2021-06-02">2021-06-02</time></span>&nbsp;<span class="post-category">included in <a href="/categories/windows-kernel/"><i class="far fa-folder fa-fw"></i>Windows Kernel</a></span></div><div class="content">Intel VT-x是Intel芯片用于支持硬件虚拟化的一种技术，个人理解是在传统的操作系统之上，创建专用于虚拟化开发者的特权级环境，这种权限甚至高于操作系统的环境，也就是常说的Hypervisor层，同样的，新的环境也会引入一些新的特权指令等新的功能。在设计架构上和SVM类似，分为VMM和VMGUEST两种角色，分别处于VMX-ROOT和VMX-NO ROOT模式下
-
-对于虚拟机来说，Hypervisor是完全透明的，当Guest客户机发生vmexit事件后会陷入到Hypervisor，此时控制权完全交与Hypervisor，而Hypervisor同样可以通过vmlaunch运行虚拟机，或者在处理完vmexit事件后，通过vmresume指令，继续运行虚拟机
-VT框架实现流程 本代码用于学习研究，运行于32位操作系统之上，在代码实现VT的时候，主要是需要遵循Intel开发手册的标准，我这里实现的时候，大概是以下的流程:
- 判断当前CPU是否支持VT技术，通过执行cpuid指令，获取返回信息并判断对应的标志位，这是硬件层面的要求 读取MSR_IA32_FEATURE_CONTROL MSR寄存器对应标志位，用于判断在BIOS配置中是否开启了VT 检查并设置CR4 VMXE标志位 分配4K对齐的内存，用于vmx操作，这块区域按照白皮书的定义一般叫做VMXON region 初始化VMXON region区域，主要是写入一个VMCS版本号，这个版本号通过读取 IA32_MSR_VMX_BASIC MSR寄存器获得 执行VMXON,并检查EFLAGE.CF位是否置0，判断是否执行成功 分配4K对齐的内存，用于逻辑处理器也即虚拟机的操作区域，叫做VMCS region 调用vmclear指令，将VMCS区域设置为清除状态，也即区域初始化 调用vmptrld指令，激活VMCS 为host以及guest分配内存空间 填充VMCS区域，这是最重要也是最复杂的一步 通过vmlaunch运行虚拟机  代码部分 这个代码写的也是一波三折，蓝屏N次，也是各种坑，虽然可以有参考代码，但实际上有很多因素，遇到比如像保存现场代码的优化，多核处理等等诸多问题
-首先是开启VT的前期，检测阶段，首先就是通过CPUID指令，这个指令执行前，需要将EAX寄存器置为1，返回值会存在ECX寄存器中，这里CPUID置1是Intel的要求，如果EAX中是其他值，返回的信息也是不同的，只是在这里用作CPU VTZ支持检测，EAX需要置1
-
-1 2 3 4 5 6 7 8 9 10 11 12  get_cpuid_info proc,_para:dword pushad mov eax,1H cpuid mov esi,_para mov [esi],ecx popad ret get_cpuid_info endp   然后是读取IA32_FEATURE_CONTROL MSR寄存器,如果在bios启用VT则bit1，bit2或者两者都必须为1，bit1和bit2主要用于设置是否处于SMX Mode（安全扩展模式）下，这里一般检测bit2就可以了
-1 2 3 4 5 6  ULONG64 msr = __readmsr(MSR_IA32_FEATURE_CONTROL); if (!</div><div class="post-footer">
-        <a href="/intel-vt-x-mini-vt-%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">Read More</a><div class="post-tags">
-                <i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/kernel/">Kernel</a>,&nbsp;<a href="/tags/vt/">VT</a></div></div>
-</article></div></div>
+</article><ul class="pagination"><li class="page-item active">
+                    <span class="page-link">
+                        <a href="/">1</a>
+                    </span>
+                </li><li class="page-item ">
+                    <span class="page-link">
+                        <a href="/page/2/">2</a>
+                    </span>
+                </li></ul></div></div>
             </main><footer class="footer">
-        <div class="footer-container"><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021 - 2022</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">jhinxs</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">Jhinxs Story</a></span></div>
+        <div class="footer-container"><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021 - 2023</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">jhinxs</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">Jhinxs Story</a></span></div>
         </div>
     </footer></div>
 
