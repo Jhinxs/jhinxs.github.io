@@ -10,7 +10,7 @@
 这里主要简单介绍一下国际云安全联盟CSA发布的SDP(软件定义边界)以及美国国家标准技术研究所(NIST)发布的的零信任标准。
 ### SDP
 CSA在2014年发布了SDP技术标准，软件定义边界是指通过在每个用户的设备上安装客户端软件，也即Agent,用作身份校验。通过验证则可以访问对应的资源，这样在逻辑上形成一种网络边界，相对于传统的网络架构，不再通过传统内外网的形式划分网络边界。  
-[<img src="/images/assets/post7/sdp.png" width="100%"/>](/images/assets/post7/sdp.png)  
+[<img src="/images/assets/post7/sdp.PNG" width="100%"/>](/images/assets/post7/sdp.PNG)  
 SDP的主要组件有三个：
 * SDP客户端：负责在用户登录时，传输所需认证的身份信息以及业务请求信息。
 * SDP管控端：验证用户的身份，向网关下发访问控制策略
@@ -47,7 +47,7 @@ SPA过程：
 7. 企业应该尽可能收集关于资产、网络基础设施和通信的当前状态信息,并将其应用于改善网络安全态势。
 
 #### ZTA框架模型
-[<img src="/images/assets/post7/zta.png" width="100%"/>](/images/assets/post7/zta.png)  
+[<img src="/images/assets/post7/zta.PNG" width="100%"/>](/images/assets/post7/zta.PNG)  
 以上组件的具体描述：
 * 策略引擎（Policy Engine）:负责访问控制，决定主体是否有权访问资源，策略引擎可以使用多种维度的情报作为输入，用于策略的指定，以决定授予或拒绝对该资源的访问。
 * 策略管理（Policy Administrator）: 负责管理用于用户身份认证的令牌凭据以及建立会话，依赖于策略引擎的输出，并通知PEP创建或者关闭会话。
@@ -69,7 +69,7 @@ web代理网关顾名思义，只对Web请求做代理转发，只支持Web网�
 前面说到，Web代理网关无法支持客户端类的C/S应用，意味着无法覆盖所有的应用访问场景，例如SSH,RDP,企业软件升级等等。
 隧道网关的实现，可以使用VPN技术来实现，通过设置虚拟网卡，拦截网络流量，流量转发给网关之后，进行身份与权限校验，将合法的流量转发到对应的服务器上。
 隧道网关相比于Web代理网关，可以覆盖更多的场景，但是性能可能不如Web代理网关，在对流量的管控粒度上，可能也不如Web网关细致，实际中，可以将两种网关进行互补部署，取长补短。  
-[<img src="/images/assets/post7/wangguan.png" width="100%"/>](/images/assets/post7/wangguan.png) 
+[<img src="/images/assets/post7/wangguan.PNG" width="100%"/>](/images/assets/post7/wangguan.PNG) 
 #### API 网关
 主要场景在，当服务器和服务器之间进行通信，访问目标服务器的API的情况下。
 1) 通过网关的身份认证，和Web代理网关类似。
@@ -79,7 +79,7 @@ web代理网关顾名思义，只对Web请求做代理转发，只支持Web网�
 ### 权限引擎
 
 之前说过，策略引擎是决定访问主体是否有权访问资源的核心组件，零信任的认证过程不是单次有效，而是持续校验动态变化的过程，其依赖便是权限引擎。  
-[<img src="/images/assets/post7/pe.png" width="100%"/>](/images/assets/post7/pe.png)
+[<img src="/images/assets/post7/pe.PNG" width="100%"/>](/images/assets/post7/pe.PNG)
 1) 策略管理：管理员可以实时的配置和管理策略。
 2) 策略引擎：策略引擎可以根据用户身份以及要访问的资源，可以匹配出所有策略，以最小原则为准，例如10条策略中，但凡有一条不允许，那么整体结果则禁止访问。权限引擎还应该对策略进行交叉计算，满足策略的交集才可放行。
 3) 策略引擎的数据来源：这些都是策略引擎的依赖，例如身份大数据，设备清单信息，服务器信息等等，还可以接入威胁情报等数据源，全方位综合的进行数据分析。
