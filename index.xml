@@ -27,6 +27,15 @@ Web 代理网关 web代理网关顾名思义，只对Web请求做代理转发，
 主要功能：
  获取身份 客户端在发起请求的时候，会在请求数据包头部加入代表用户身份的Token，代理网关可以解析数据包头，获取到验证身份所需的身份信息进行校验。 验证身份：将身份信息转发给PA等管控平台，管控平台验证后将结果发送回网关。 代理转发： 这里的基本的流量代理转发功能，和平常的代理转发类似，将后端的业务域名DNS解析到Web代理网关的IP地址，用户访问业务系统域名的时候，会跳转到Web网关之上，网关会解析用户想要访问的业务系统的地址，当通过身份认证后，则会将流量转发到对应的服务器上。  Tunnel 隧道网关 前面说到，Web代理网关无法支持客户端类的C/S应用，意味着无法覆盖所有的应用访问场景，例如SSH,RDP,企业软件升级等等。 隧道网关的实现，可以使用VPN技术来实现，通过设置虚拟网卡，拦截网络流量，流量转发给网关之后，进行身份与权限校验，将合法的流量转发到对应的服务器上。 隧道网关相比于Web代理网关，可以覆盖更多的场景，但是性能可能不如Web代理网关，在对流量的管控粒度上，可能也不如Web网关细致，实际中，可以将两种网关进行互补部署，取长补短。]]></description>
 </item><item>
+    <title>AD域渗透学习笔记</title>
+    <link>https://jhinxs.com/%E9%AB%98%E7%BA%A7ad%E5%9F%9F%E6%B8%97%E9%80%8F%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</link>
+    <pubDate>Tue, 03 Jan 2023 14:02:16 &#43;0800</pubDate>
+    <author>Author</author>
+    <guid>https://jhinxs.com/%E9%AB%98%E7%BA%A7ad%E5%9F%9F%E6%B8%97%E9%80%8F%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</guid>
+    <description><![CDATA[很早之前的学习笔记了，转成了PDF,直接看下面PDF即可  AD域渗透1 下载链接 Download PDF.
+  AD域渗透2 下载链接 Download PDF.
+  AD域渗透3 下载链接 Download PDF.]]></description>
+</item><item>
     <title>Windows BIOS MBR引导分析</title>
     <link>https://jhinxs.com/windows-bios-mbr%E5%BC%95%E5%AF%BC%E5%88%86%E6%9E%90/</link>
     <pubDate>Sat, 05 Nov 2022 16:07:06 &#43;0800</pubDate>

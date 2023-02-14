@@ -121,6 +121,13 @@ Web 代理网关 web代理网关顾名思义，只对Web请求做代理转发，
         <a href="/%E5%AE%89%E5%85%A8%E6%9E%B6%E6%9E%84-%E9%9B%B6%E4%BF%A1%E4%BB%BB%E5%88%9D%E8%AF%86/">Read More</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/network-security/">Network Security</a>,&nbsp;<a href="/tags/beyondcorp/">BeyondCorp</a>,&nbsp;<a href="/tags/security-architecture/">Security architecture</a></div></div>
 </article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
+        <a href="/%E9%AB%98%E7%BA%A7ad%E5%9F%9F%E6%B8%97%E9%80%8F%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">AD域渗透学习笔记</a>
+    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-publish">published on <time datetime="2023-01-03">2023-01-03</time></span>&nbsp;<span class="post-category">included in <a href="/categories/ad%E5%9F%9Fnetwork/"><i class="far fa-folder fa-fw"></i>AD域，Network</a></span></div><div class="content">很早之前的学习笔记了，转成了PDF,直接看下面PDF即可  AD域渗透1 下载链接 Download PDF.
+  AD域渗透2 下载链接 Download PDF.
+  AD域渗透3 下载链接 Download PDF.</div><div class="post-footer">
+        <a href="/%E9%AB%98%E7%BA%A7ad%E5%9F%9F%E6%B8%97%E9%80%8F%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">Read More</a><div class="post-tags">
+                <i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/network-security/">Network Security</a>,&nbsp;<a href="/tags/active-directory/">Active Directory</a>,&nbsp;<a href="/tags/%E5%9F%9F/">域</a></div></div>
+</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
         <a href="/windows-bios-mbr%E5%BC%95%E5%AF%BC%E5%88%86%E6%9E%90/">Windows BIOS MBR引导分析</a>
     </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-publish">published on <time datetime="2022-11-05">2022-11-05</time></span>&nbsp;<span class="post-category">included in <a href="/categories/hardwarewindows-os/"><i class="far fa-folder fa-fw"></i>Hardware,Windows OS</a></span></div><div class="content">流程概述 Windows BIOS开机引导流程概览：
  1.开机主板加电，BIOS运行 2.运行硬盘开头的MBR代码 3.MBR代码引导运行Bootmgr（也有可能引导VBR，然后VBR引导Bootmgr） 4.Bootmgr根据BCD配置，自动运行或让用户选择不同的启动项，并加载运行Winload.exe 5.Winload.exe加载ntoskrnl.exe内核模块 6.ntoskrnl.exe启动操作系统  MBR与VBR结构概览 
@@ -170,30 +177,6 @@ EPT的构建 EPT的构建，感觉就是实现一个具体的地址转换的过�
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16  pEptState-&gt;EptPageTable = PageTable; PageTable-&gt;PML4[0].all = 0; PageTable-&gt;PML4[0].Bits.read_access = 1; PageTable-&gt;PML4[0].Bits.write_access = 1; PageTable-&gt;PML4[0].Bits.exec_access_supervisor = 1; PageTable-&gt;PML4[0].Bits.PDPTPFN = MmGetPhysicalAddress(&amp;PageTable-&gt;PML3[0]).QuadPart &gt;&gt; 12; for (int i = 0; i &lt; VMM_EPT_PML3E_COUNT; i++) { PageTable-&gt;PML3[i].all = 0; PageTable-&gt;PML3[i].</div><div class="post-footer">
         <a href="/intel-vt-x64-ept-hook%E6%A1%86%E6%9E%B6%E7%9A%84%E5%AE%9E%E7%8E%B0/">Read More</a><div class="post-tags">
                 <i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/kernel/">Kernel</a>,&nbsp;<a href="/tags/vt/">VT</a></div></div>
-</article><article class="single summary" itemscope itemtype="http://schema.org/Article"><h1 class="single-title" itemprop="name headline">
-        <a href="/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/">x64的一些特性</a>
-    </h1><div class="post-meta"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>jhinxs</a></span>&nbsp;<span class="post-publish">published on <time datetime="2021-08-21">2021-08-21</time></span>&nbsp;<span class="post-category">included in <a href="/categories/windows-os/"><i class="far fa-folder fa-fw"></i>Windows OS</a></span></div><div class="content">寄存器 首先是寄存器数值的宽度，除去标志寄存器和段寄存器(段寄存器长度均为96位，其中有16位的可见部分和80位的不可见部分)外，均为8个字节64位宽度，在32位平台的基础上，增加了R8~R15共8个寄存器
-
- 易变寄存器:RAX,RCX,RDX,R8-R11 非易变寄存器：RBP,RBX,RSI,RDI,R12-R15  FS与GS 32位的操作系统中，FS寄存器在3环执向TEB结构体，0环指向KPCR结构体，在X64中，则是使用GS寄存器
-
-微软提供了IA32_FS_BASE(0xC0000100)和IA32_GS_BASE MSR(0xC0000101)寄存器用于获取Base,因为如果用段描述的方式去获取Base的话，在64位的段描述符中，是没法再放入64位的地址
-
-FS则继续给Wow64提供服务，也就是32位的应用程序
-内存布局与内存模型 x64下内存分配，理论可以使用2^64次大小的内存空间，但是实际操作系统设计时只用了其中的48位，x64采用了9-9-9-9-12分页，也就是PML4T分页，按照32位操作系统非PAE分页的套路，也即10-10-12分页，PDE-PTE-offset，总的内存1024x1024x4k=4Gb，其中用户和内核各使用了2GB,在x64下理论上支持，512x512x512x512x4k=256Tb，实际上windows支持16TB左右的空间 其中:
- 用户空间:0x00000000~00000000 &mdash; 0x000007fff~ffffffff 内核空间:0xfffff800~00000000 &mdash; 0xffffffff~ffffffff  IA-32架构下主要内存模型为:Basic Flat Module(基本的平坦模型)，Protect Flat Module(受保护的平坦模式)，Multi-Segment Module(分段内存模型)
-  Basic Flat Module(基本的平坦模型)
-最为简单的一种模型，操作系统和应用程序可以访问不受限制的内存空间，没有任何的分段机制，根据inter开发手册所说，一个最简单的平坦模型，至少建立两个段描述符，一个数据，一个代码，分别指向了数据段，代码段，但是都被映射到基址为0，限长为4gb的内存空间，即便访问的地址超过了实际物理内存的最大地址，也不会报错
-  
-  Protect Flat Module(受保护的平坦模式)
-主要是在基本的平坦模型中，提供了内存访问保护，超出界限后会出发保护异常，同样有了特权级机制的段权限分配，也即用户模式和内核模式，这些段的基址都是从0开始，也就是说这些段在内存空间上来说都是重叠的，逻辑上划分为不同的用途
-  
-  Multi-Segment Module(分段内存模型)
-相较于前两种，稍稍复杂一点，这种对于不同用途的段在内存划分上也分离开来，实现真正的内存分段，对不同段，如代码段，数据段，内存访问采用seg base+offset的形式，采用了强制的硬件级的保护机制，每个应用程序可以有自己的私有段，也可以和其他程序共享，同样的，段权限检查和访问控制机制，都可以阻止如内存越界等非法访问操作
-  
-在x64中，根据inter开发手册:
- In 64-bit mode, segmentation is generally (but not completely) disabled, creating a flat 64-bit linear-address space.</div><div class="post-footer">
-        <a href="/x64%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%80%A7/">Read More</a><div class="post-tags">
-                <i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/os/">OS</a></div></div>
 </article><ul class="pagination"><li class="page-item active">
                     <span class="page-link">
                         <a href="/">1</a>
